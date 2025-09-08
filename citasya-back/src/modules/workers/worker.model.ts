@@ -32,7 +32,18 @@ export class Worker {
     email!: string;
 
     @Column({ type: "jsonb", nullable: true })
-    schedule!: object;
+    schedule!: {
+    days: {
+        Mon: { enabled: boolean; startTime: string; endTime: string };
+        Tue: { enabled: boolean; startTime: string; endTime: string };
+        Wed: { enabled: boolean; startTime: string; endTime: string };
+        Thu: { enabled: boolean; startTime: string; endTime: string };
+        Fri: { enabled: boolean; startTime: string; endTime: string };
+        Sat: { enabled: boolean; startTime: string; endTime: string };
+        Sun: { enabled: boolean; startTime: string; endTime: string };
+    };
+    breakTime: string;
+    };
 
     @Column({
         type: "enum",
