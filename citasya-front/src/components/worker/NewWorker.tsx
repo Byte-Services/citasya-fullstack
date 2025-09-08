@@ -3,30 +3,12 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from '../InputField';
+import {Specialty, Service, Specialist } from '../../types/worker';
+
 
 interface NewSpecialistProps {
   onClose: () => void;
   onWorkerAdded: (newSpecialist: Specialist) => void;  
-}
-
-interface Specialist {
-  id: number;
-  name: string;
-  specialties: string[];
-  phone: string;
-  documentId: string;
-  email: string;
-  services:  { id: number; name: string }[];
-}
-
-interface Specialty {
-  id: number;
-  name: string;
-}
-
-interface Service {
-  id: number;
-  name: string;
 }
 
 export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerAdded }) => {

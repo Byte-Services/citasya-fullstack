@@ -3,26 +3,7 @@ import { VscAccount, VscAdd} from "react-icons/vsc";
 import { NewSpecialist } from "./NewWorker";
 import { SpecialistProfile } from "./WorkerProfile";
 import { ServiceFormField } from "../InputField";
-
-type Specialty = {
-  name: string;
-};
-
-type Service = {
-  id: number;
-  name: string;
-  specialty: Specialty;
-};
-
-type Specialist = {
-  id: number;
-  name: string;
-  specialties: string[];
-  phone: string;
-  documentId: string;
-  email: string;
-  services: { id: number; name: string }[];
-};
+import {Service, Specialist, Availability } from '../../types/worker';
 
 interface BackendSpecialist {
   id: number;
@@ -31,6 +12,7 @@ interface BackendSpecialist {
   documentId: string;
   email: string;
   services: Service[];
+  schedule: Availability;
 }
 
 type SpecialistCardProps = {
@@ -89,21 +71,33 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
         const servicesData = await servicesRes.json();
         setAllServices(servicesData.map((s: Service) => ({ id: s.id, name: s.name }))); 
 
-        const formattedData: Specialist[] = specialistsData.map((spec) => {
-          const uniqueSpecialties = Array.from(
-            new Set(spec.services.map((service) => service.specialty.name))
-          );
-          
-          return {
-            id: spec.id,
-            name: spec.name,
-            specialties: uniqueSpecialties,
-            phone: spec.phone,
-            documentId: spec.documentId,
-            email: spec.email,
-            services: spec.services.map((service) => ({ id: service.id, name: service.name })), 
-          };
-        });
+      const formattedData: Specialist[] = specialistsData.map((spec) => {
+        const uniqueSpecialties = Array.from(
+          new Set(spec.services.map((service) => service.specialty.name))
+        );
+
+        return {
+          id: spec.id,
+          name: spec.name,
+          specialties: uniqueSpecialties,
+          phone: spec.phone,
+          documentId: spec.documentId,
+          email: spec.email,
+          services: spec.services.map((service) => ({ id: service.id, name: service.name })),
+          schedule: spec.schedule || {
+            days: {
+              Mon: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Tue: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Wed: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Thu: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Fri: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Sat: { enabled: false, startTime: "09:00", endTime: "17:00" },
+              Sun: { enabled: false, startTime: "09:00", endTime: "17:00" },
+            },
+            breakTime: "none",
+          },
+        };
+      });
         
         setSpecialists(formattedData);
       } catch (err: unknown) {
@@ -135,7 +129,7 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
   return (
     <div className="flex w-full max-md:flex-col max-md:max-h-auto overflow-hidden" style={{ fontFamily: 'Poppins, sans-serif'}}>
       <aside className="w-[36%] max-md:w-full max-md:mb-5 max-md:px-4">
-        <div className="flex flex-col mx-auto w-full h-[803px] font-medium rounded-lg bg-white max-md:pb-24 max-md:max-w-full">
+        <div className="flex flex-col mx-auto w-full h-full font-medium rounded-lg bg-white max-md:pb-24 max-md:max-w-full">
           <div className="flex gap-4 px-6 self-center max-w-full text-sm tracking-normal bg text-neutral-600 w-full max-md:w-full">
             <div className="flex flex-auto items-center px-2.5 py-3 pb-4 bg-white rounded-lg w-full">
               <ServiceFormField
@@ -164,6 +158,7 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
                 specialties={spec.specialties}
                 onClick={setSelectedSpecialistId}
                 selected={selectedSpecialistId === spec.id}
+                
               />
             ))}
           </div>
@@ -180,7 +175,7 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
         )}
       </aside>
 
-      <section className="ml-5 w-[64%] max-md:ml-0 max-md:w-full">
+      <section className="ml-5 w-[60%] max-md:ml-0 max-md:w-full">
         <SpecialistProfile 
           specialist={selectedSpecialist || null} 
           onWorkerUpdated={handleWorkerUpdated}
