@@ -39,10 +39,12 @@ function SpecialistCard({
       <VscAccount className="text-4xl text-[#447F98] bg-[#D9E8F6] rounded-full mr-4"/>
       <div className="flex flex-col mt-2">
       <h3 className="text-sm tracking-tight leading-none text-black">{name}</h3>
-      {specialties.length > 0 && (
+      {specialties && specialties.length > 0 ? (
         <p className="text-xs tracking-tight leading-6 text-neutral-600 mt-1">
-        {specialties.join(", ")}
+          {specialties.join(", ")}
         </p>
+      ) : (
+        <p className="text-xs text-neutral-400 mt-1">Sin especialidad</p>
       )}
       </div>
     </div>
@@ -73,7 +75,11 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
 
       const formattedData: Specialist[] = specialistsData.map((spec) => {
         const uniqueSpecialties = Array.from(
-          new Set(spec.services.map((service) => service.specialty.name))
+          new Set(
+            spec.services
+              .map((service) => service.specialty?.name) 
+              .filter(Boolean) 
+          )
         );
 
         return {
@@ -167,9 +173,7 @@ const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
             <NewSpecialist
               onClose={() => setShowNewSpecialistModal(false)}
-              onWorkerAdded={(newSpecialist: Specialist) => {
-                setSpecialists((prev) => [...prev, newSpecialist]);
-              }}
+              onWorkerAdded={() => setForceReload(prev => prev + 1)}
             />
           </div>
         )}

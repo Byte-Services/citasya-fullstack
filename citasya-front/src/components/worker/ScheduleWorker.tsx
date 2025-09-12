@@ -63,7 +63,7 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({ onSave, onC
     <main className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ fontFamily: 'Poppins, sans-serif'}}>
       <div className="max-w-xl w-full mx-4 sm:mx-6 md:mx-auto">
         <div className="w-full px-8 mt-4 bg-white h-[500px] rounded-lg overflow-y-auto">
-          <div className="mt-4 px-8 flex justify-between items-center w-full">
+          <div className="mt-8 px-8 flex justify-between items-center w-full">
             <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
               Editar Horario
             </h1>

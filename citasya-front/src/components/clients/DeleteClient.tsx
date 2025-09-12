@@ -31,7 +31,7 @@ export const EliminarCliente: React.FC<EliminarClienteProps> = ({ onClose, onCon
           <div className="flex flex-row justify-between items-center w-full px-10 gap-6">
             <div className="flex-1"></div>
             <h1 className="text-2xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-              Eliminar Perfil Cliente
+              Eliminar Cliente
             </h1>
             <button onClick={onClose} aria-label="Cerrar modal" className="flex-1 text-right text-neutral-600 hover:text-neutral-800 transition-colors duration-200">
               <VscChromeClose className="inline-block w-6 h-6" />

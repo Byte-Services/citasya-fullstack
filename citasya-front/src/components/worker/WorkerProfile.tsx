@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DeleteSpecialist } from "./DeleteWorker";
+import { DeleteWorker } from "./DeleteWorker";
 import { EditWorker } from "./EditWorker";
 import { VscEdit } from "react-icons/vsc";
 import AvailabilitySelector from "./ScheduleWorker"; // Renombrado para claridad
@@ -28,21 +28,17 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
 
   const serviceNames = specialist.services.map(s => s.name).join(", ");
   const handleDeleteWorker = async () => {
-    try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/workers/${specialist.id}`, {
         method: "DELETE",
       });
 
       if (!res.ok) {
-        throw new Error("Error al eliminar especialista");
+        const data = await res.json();
+        throw new Error(data.message || "No se pudo eliminar el especialista.");
       }
 
       onWorkerUpdated();
       setShowDeleteModal(false);
-    } catch (error) {
-      console.error(error);
-      alert("No se pudo eliminar el especialista");
-    }
   };
 
   const handleSaveAvailability = async (newAvailability: Availability) => {
@@ -80,6 +76,16 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
     Sun: "Dom",
   };
 
+  
+  const formatPhone = (phone: string) => {
+    if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
+
+    const area = phone.slice(2, 5);       // "414"
+    const number = phone.slice(5);        // "3252123"
+
+    return `0${area}-${number}`;          // "0414-3252123"
+  };
+
   return (
     <section className="ml-5 w-full h-full">
       <div className="mx-auto w-full rounded-lg bg-white pb-8 max-md:px-5 max-md:mt-7 max-md:max-w-full" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -107,12 +113,12 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
               <div>
                 <div className="text-xs text-neutral-600">Teléfono:</div>
                 <div className="flex flex-col px-5 py-3 mt-2 text-xs bg-neutral-100 rounded-sm text-neutral-600 border border-gray-200">
-                  <div>{specialist.phone}</div>
+                  <div>{formatPhone(specialist.phone)}</div>
                 </div>
               </div>
             </div>
             {/* Columna derecha: Cédula y Email */}
-            <div className="mt-4 w-full flex flex-col gap-4">
+            <div className="mt-6 w-full flex flex-col gap-4">
               <div>
                 <div className="text-xs text-neutral-600">Cédula:</div>
                 <div className="flex flex-col px-5 py-3 mt-2 w-full text-xs bg-neutral-100 rounded-sm text-neutral-600 border border-gray-200">
@@ -215,10 +221,14 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
               </div>
 
               {/* Descanso */}
-              {specialist.schedule && specialist.schedule.breakTime !== "none" && (
-              <div className="mt-3 text-xs text-neutral-500 text-center">
-                Descanso: {specialist.schedule.breakTime}
-              </div>
+              {specialist.schedule && specialist.schedule.breakTime !== "none" ? (
+                <div className="mt-3 text-xs text-neutral-500 text-center">
+                  Descanso: {specialist.schedule.breakTime}
+                </div>
+              ) : (
+                <div className="mt-3 text-xs text-neutral-500 text-center">
+                  Sin descanso
+                </div>
               )}
 
         </div>
@@ -264,7 +274,7 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
         />
       )}
       {showDeleteModal && (
-        <DeleteSpecialist
+        <DeleteWorker
           onClose={() => setShowDeleteModal(false)}
           onConfirm={handleDeleteWorker}
         />

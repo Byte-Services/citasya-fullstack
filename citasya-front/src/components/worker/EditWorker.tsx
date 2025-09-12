@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
-import { ServiceFormField, SelectOption } from '../InputField'; 
+import { ServiceFormField, SelectOption } from '../InputField';
 
 interface SpecialistData {
   id: string;
@@ -27,54 +27,113 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
   allServices,
   onSaveSuccess,
 }) => {
+  // Convertir teléfono desde DB (58xxxxxxx → 04xxxxxxxxx)
+  const toLocalPhone = (phone: string) => {
+    if (phone.startsWith("58") && phone.length === 12) {
+      return "0" + phone.slice(2);
+    }
+    return phone;
+  };
+
   const [formData, setFormData] = useState({
     name: specialistData.name,
-    phone: specialistData.phone,
+    phone: toLocalPhone(specialistData.phone),
     cedula: specialistData.cedula,
     email: specialistData.email,
     services: specialistData.services.map(s => s.id),
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? ''}/admin`;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { name?: string; value: string | string[] | number | number[] } }
   ) => {
     const { name, value } = e.target;
-    if (name) {
-      if (name === "services") {
-        let newValue: number[] = [];
-        if (Array.isArray(value)) {
-          newValue = (value as string[]).map(v => Number(v));
-        } else if (typeof value === "string") {
-          newValue = [Number(value)];
-        } else if (Array.isArray(value)) {
-          newValue = value as number[];
-        }
-        setFormData(prev => ({ ...prev, [name]: newValue }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
+    if (!name) return;
+
+    if (name === "services") {
+      let newValue: number[] = [];
+      if (Array.isArray(value)) {
+        newValue = (value as string[]).map(v => Number(v));
+      } else if (typeof value === "string") {
+        newValue = [Number(value)];
+      } else if (Array.isArray(value)) {
+        newValue = value as number[];
       }
+      setFormData(prev => ({ ...prev, services: newValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const validateForm = () => {
+    // Nombre
+    if (!formData.name.trim()) return "El nombre es obligatorio.";
+
+    // Cédula (1 a 8 dígitos numéricos)
+    const cedulaRegex = /^\d{1,8}$/;
+    if (!formData.cedula.trim()) return "La cédula es obligatoria.";
+    if (!cedulaRegex.test(formData.cedula)) return "La cédula debe tener hasta 8 números.";
+
+    // Teléfono (0414..., 0416..., etc.)
+    const telefonoRegex = /^(0412|0414|0416|0424|0426|0422)\d{7}$/;
+    if (!formData.phone.trim()) return "El teléfono es obligatorio.";
+    if (!telefonoRegex.test(formData.phone)) {
+      return "El teléfono debe comenzar con 0412, 0414, 0416, 0424, 0426 o 0422 y tener 11 dígitos.";
+    }
+
+    // Email
+    if (!formData.email.trim()) return "El correo es obligatorio.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) return "El correo no tiene un formato válido.";
+
+    // Servicios
+    if (formData.services.length === 0) return "Debes asignar al menos un servicio.";
+
+    return null;
   };
 
   const handleEditSpecialist = async () => {
     setLoading(true);
+    setError(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      setLoading(false);
+      return;
+    }
+
+    // Transformar teléfono de 0414xxxxxxx → 58414xxxxxxx
+    const formattedPhone = formData.phone.replace(/^0/, "58");
+
     try {
       const response = await fetch(`${API_URL}/workers/${specialistData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          phone: formattedPhone,
           documentId: formData.cedula,
           services: formData.services.map(id => ({ id })),
         }),
       });
-      if (!response.ok) throw new Error('Error al editar especialista');
+
+      // Cambia aquí: lee el mensaje del backend
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message || 'Error al editar especialista');
+        setLoading(false);
+        return;
+      }
+
       onClose();
       if (onSaveSuccess) onSaveSuccess();
     } catch (err) {
       console.error(err);
+      setError("Ocurrió un error al guardar los cambios.");
     } finally {
       setLoading(false);
     }
@@ -82,17 +141,19 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
 
   const serviceOptions: SelectOption<number>[] = allServices.map(service => ({
     value: service.id,
-    label: service.name
+    label: service.name,
   }));
-  
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0  flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <main className="max-w-[679px] w-full">
         <div className="flex flex-col py-9 w-full bg-neutral-100 rounded-[30px] shadow-lg">
           <div className="flex flex-row justify-between items-center w-full px-10">
             <div className="flex-1"></div>
-            <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+            <h1
+              className="text-4xl font-medium leading-none text-center text-[#447F98]"
+              style={{ fontFamily: 'Roboto Condensed, sans-serif' }}
+            >
               Editar Perfil Especialista
             </h1>
             <button
@@ -104,7 +165,13 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
             </button>
           </div>
 
-          <form className="flex flex-col px-10 mt-8 w-full text-neutral-600 max-md:px-5">
+          <form
+            className="flex flex-col px-10 mt-8 w-full text-neutral-600 max-md:px-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleEditSpecialist();
+            }}
+          >
             <div className="flex gap-x-10 max-md:flex-col">
               <div className="flex flex-col w-full md:w-1/2 gap-y-6">
                 <ServiceFormField
@@ -138,23 +205,23 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
             </div>
 
             <div className="flex flex-col w-full gap-y-6">
-                <ServiceFormField
-                    label="Servicios asignados:"
-                    placeholder="Selecciona servicios..."
-                    name="services"
-                    multiple
-                    options={serviceOptions}
-                    value={formData.services} 
-                    onChange={handleChange}
-                    className="mt-6"
-                />
+              <ServiceFormField
+                label="Servicios asignados:"
+                placeholder="Selecciona servicios..."
+                name="services"
+                multiple
+                options={serviceOptions}
+                value={formData.services}
+                onChange={handleChange}
+                className="mt-6"
+              />
             </div>
-            
+
+            {error && (
+              <p className="text-red-500 text-sm mt-4 text-center">{error}</p>
+            )}
+
             <button
-              onClick={e => {
-                e.preventDefault();
-                handleEditSpecialist();
-              }}
               type="submit"
               className="self-center px-11 py-5 mt-10 text-sm font-semibold text-white bg-[#447F98] rounded-[40px] hover:bg-[#629BB5] transition-colors duration-200"
               style={{ fontFamily: 'Poppins, sans-serif' }}

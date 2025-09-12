@@ -31,7 +31,7 @@ interface Appointment {
   hour: string;
   status: AppointmentStatus;
   client: Client;
-  worker: Worker;
+  worker: Worker | null;
   service: Service;
 }
 
@@ -129,7 +129,7 @@ const Appointments: React.FC = () => {
     // Filtro por estado  
     const statusMatch = selectedStatus === '' || appointment.status.toLowerCase() === selectedStatus.toLowerCase();
     // Filtro por especialista (usando el nombre del objeto anidado)
-    const especialistaMatch = selectedEspecialista === '' || appointment.worker.name.toLowerCase() === selectedEspecialista.toLowerCase();
+    const especialistaMatch = selectedEspecialista === '' || (appointment.worker?.name ?? '').toLowerCase() === selectedEspecialista.toLowerCase();
     // Filtro por servicio (usando el nombre del objeto anidado)
     const serviceMatch = selectedService === '' || appointment.service.name.toLowerCase() === selectedService.toLowerCase();
     // Filtro por término de búsqueda (cliente)
@@ -291,16 +291,16 @@ const Appointments: React.FC = () => {
 
           {!loading && !error && (
               <AppointmentsTable
-                  appointments={filteredAppointments.map(a => ({
-                    id: a.id.toString(),
-                    status: a.status, 
-                    service: a.service.name,
-                    date: a.date,
-                    time: a.hour,
-                    clientName: a.client.name,
-                    professional: a.worker.name, 
-                  }))}
-                  onUpdateStatus={handleUpdateStatus}
+                appointments={filteredAppointments.map(a => ({
+                  id: a.id.toString(),
+                  status: a.status,
+                  service: a.service.name,
+                  date: a.date,
+                  time: a.hour,
+                  clientName: a.client.name,
+                  professional: a.worker?.name || 'Especialista eliminado',
+                }))}
+                onUpdateStatus={handleUpdateStatus}
               />
           )}
         </div>

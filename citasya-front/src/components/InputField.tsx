@@ -99,6 +99,7 @@ export const ServiceFormField = <T extends string | number>({
             onChange={handleSelectChange}
             classNamePrefix="custom-select"
             isDisabled={disabled}
+            noOptionsMessage={() => "No hay más opciones disponibles"}
             styles={{
               control: (base) => ({
                 ...base,

@@ -48,8 +48,9 @@ export class WorkerController {
       const newWorker = await this.workerService.create(newWorkerData);
 
       res.status(201).json(newWorker);
-    } catch (error) {
-      next(error);
+    } catch (error: any) {
+      // Aquí devuelves el error como JSON
+      res.status(400).json({ message: error.message });
     }
   }
 
@@ -63,8 +64,8 @@ export class WorkerController {
       const updatedWorkerData = req.body;
       const updatedWorker = await this.workerService.update(id, updatedWorkerData);
       res.json(updatedWorker);
-    } catch (error) {
-      next(error);
+    } catch (error:any) {
+      res.status(400).json({ message: error.message });
     }
   }
 
@@ -75,10 +76,22 @@ export class WorkerController {
   async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number(req.params.id);
-      await this.workerService.delete(id);
-      res.status(204).end(); 
+      const result = await this.workerService.delete(id);
+
+      if (!result.success) {
+        if (result.reason === "Especialista no encontrado") {
+          res.status(404).json({ message: result.reason });
+        } else {
+          res.status(400).json({ message: result.reason });
+        }
+        return;
+      }
+
+      res.status(204).send();
     } catch (error) {
-      next(error);
+      console.error(`Error deleting worker with id ${req.params.id}:`, error);
+      res.status(500).json({ message: "Error al eliminar el trabajador." });
     }
   }
+
 }

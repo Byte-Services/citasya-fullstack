@@ -65,25 +65,25 @@ export class ClientService {
      * Elimina un cliente si no tiene citas pendientes o confirmadas.
      */
     public async deleteClient(id: number): Promise<{ success: boolean; reason?: string }> {
-    const client = await this.clientRepository.findOne({
-        where: { id },
-        relations: ["appointments"],
-    });
+        const client = await this.clientRepository.findOne({
+            where: { id },
+            relations: ["appointments"],
+        });
 
-    if (!client) {
-        return { success: false, reason: "Cliente no encontrado" };
-    }
+        if (!client) {
+            return { success: false, reason: "Cliente no encontrado" };
+        }
 
-    // Verificar citas activas
-    const hasActiveAppointments = client.appointments.some(
-        (appt) => appt.status === "Pendiente" || appt.status === "Confirmado"
-    );
+        // Verificar citas activas
+        const hasActiveAppointments = client.appointments.some(
+            (appt) => appt.status === "Pendiente" || appt.status === "Confirmado"
+        );
 
-    if (hasActiveAppointments) {
-        return { success: false, reason: "El cliente tiene citas activas y no puede ser eliminado" };
-    }
+        if (hasActiveAppointments) {
+            return { success: false, reason: "El cliente tiene citas activas y no puede ser eliminado" };
+        }
 
-    await this.clientRepository.remove(client);
-    return { success: true };
+        await this.clientRepository.remove(client);
+        return { success: true };
     }
 }

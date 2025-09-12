@@ -7,6 +7,7 @@ const appointmentsController = new AppointmentsController();
 router.get('/', appointmentsController.getAllAppointments);
 router.post('/', appointmentsController.createAppointment);
 router.patch('/:id/status', appointmentsController.updateStatus);
+router.get('/available-slots', (req, res) => appointmentsController.getAvailableSlots(req, res));
 
 
 export default router;

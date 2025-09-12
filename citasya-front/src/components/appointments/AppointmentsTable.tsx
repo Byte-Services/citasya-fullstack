@@ -12,7 +12,7 @@ interface AppointmentData {
   date: string;
   clientName: string;
   time: string;
-  professional: string;
+  professional: string | null;
 }
 
 enum AppointmentStatus {
@@ -58,7 +58,9 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
     }
   };
 
-  const statusOptions: SelectOption<string>[] = Object.values(AppointmentStatus).map(status => ({
+  const statusOptionsForModal: SelectOption<string>[] = Object.values(AppointmentStatus)
+  .filter(status => status !== AppointmentStatus.Cancelado)
+  .map(status => ({
     value: status,
     label: status
   }));
@@ -116,22 +118,30 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{appointment.clientName}</td>
               <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{formatTime(appointment.time)}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{appointment.professional}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                  {appointment.professional ? appointment.professional : 'Especialista eliminado'}
+                </td>
               <td className="px-6 py-4 whitespace-nowrap text-xs font-medium flex gap-2">
-                <button
-                  onClick={() => openStatusModal(appointment)}
-                  className="flex justify-center items-center gap-2 px-4 py-2 rounded-lg shadow-lg bg-[#D6EBF3] text-[#447F98] font-semibold text-xs hover:bg-[#B0E0E6] transition-colors "
-                >
-                  <VscEdit className="text-sm text-[#447F98]" />
-                  Estado
-                </button>
-                <button
-                  onClick={() => openCancelModal(appointment)}
-                  className="flex justify-center items-center gap-2 px-4 py-2 rounded-lg shadow-lg bg-[#FEE2E2] text-[#B91C1C] font-semibold text-xs hover:bg-[#FFC1C1] transition-colors"
-                >
-                  <VscTrash className="text-sm text-[#B91C1C]" />
-                  <span>Cancelar</span>
-                </button>
+                {appointment.status === AppointmentStatus.Pendiente || appointment.status === AppointmentStatus.Confirmado || appointment.status === AppointmentStatus.Concluida ? (
+                  <>
+                    <button
+                      onClick={() => openStatusModal(appointment)}
+                      className="flex justify-center items-center gap-2 px-4 py-2 rounded-lg shadow-lg bg-[#D6EBF3] text-[#447F98] font-semibold text-xs hover:bg-[#B0E0E6] transition-colors "
+                    >
+                      <VscEdit className="text-sm text-[#447F98]" />
+                      Estado
+                    </button>
+                    <button
+                      onClick={() => openCancelModal(appointment)}
+                      className="flex justify-center items-center gap-2 px-4 py-2 rounded-lg shadow-lg bg-[#FEE2E2] text-[#B91C1C] font-semibold text-xs hover:bg-[#FFC1C1] transition-colors"
+                    >
+                      <VscTrash className="text-sm text-[#B91C1C]" />
+                      <span>Cancelar</span>
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-gray-400 text-xs">Sin acciones</span>
+                )}
               </td>
             </tr>
           ))}
@@ -148,8 +158,9 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
             <ServiceFormField
               label="Nuevo estado:"
               name="newStatus"
-              options={statusOptions}
+              options={statusOptionsForModal}
               value={newStatus}
+              placeholder='Seleccione un estado'
               onChange={handleStatusChange}
               whiteBg={false} 
               className="w-full mb-4"

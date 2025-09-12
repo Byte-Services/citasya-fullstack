@@ -55,7 +55,6 @@ export class Appointment {
     @ManyToOne(() => Worker, worker => worker.appointments)
     worker!: Worker;
 
-      // Para poder cancelar también en Google Calendar — NUEVO
     @Column({ type: "varchar", nullable: true })
     calendar_event_id!: string | null;
 }

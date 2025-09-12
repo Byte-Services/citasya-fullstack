@@ -125,6 +125,33 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
   const handleAddSpecialist = async () => {
     setLoading(true);
     setError(null);
+
+    if (!formData.name.trim() || !formData.documentId.trim() || !formData.phone.trim() || !formData.email.trim()) {
+      setError("Todos los campos son obligatorios.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^\d{1,8}$/.test(formData.documentId)) {
+      setError("La cédula debe contener solo números y máximo 8 dígitos.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError("El correo electrónico no es válido.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^04\d{9}$/.test(formData.phone)) {
+      setError("El teléfono debe tener el formato 04141234567 (11 dígitos).");
+      setLoading(false);
+      return;
+    }
+
+    const normalizedPhone = "58" + formData.phone.substring(1);
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/workers`, {
         method: 'POST',
@@ -132,7 +159,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
         body: JSON.stringify({
           name: formData.name,
           documentId: formData.documentId,
-          phone: formData.phone,
+          phone: normalizedPhone,
           email: formData.email,
           status: formData.status,
           services: formData.services.map(id => ({ id })),
@@ -158,7 +185,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
 
 
   return (
-    <main className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/20 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif'}}>
+    <main style={{ fontFamily: 'Poppins, sans-serif'}}>
       <div className="max-w-xl w-full mx-4 sm:mx-6 md:mx-auto">
         <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl">
           <header className="flex justify-between items-center w-full">

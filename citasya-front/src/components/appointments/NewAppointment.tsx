@@ -33,6 +33,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? ''}/admin`;
+  const [availableHours, setAvailableHours] = useState<string[]>([]);
 
   // 1. Cargar todas las especialidades y todos los workers al iniciar
   useEffect(() => {
@@ -127,6 +128,26 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
     }
   }, [availableWorkers, formData.workerId]);
   
+  // 5. Cargar horas disponibles según worker y fecha seleccionados
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (formData.workerId && formData.date) {
+        try {
+          const response = await fetch(`${API_URL}/appointments/available-slots?workerId=${formData.workerId}&date=${formData.date}`);
+          if (!response.ok) throw new Error("Error obteniendo horarios disponibles");
+          const data = await response.json();
+          setAvailableHours(data.slots || []);
+        } catch (err) {
+          console.error(err);
+          setAvailableHours([]);
+        }
+      } else {
+        setAvailableHours([]);
+      }
+    };
+    fetchSlots();
+  }, [formData.workerId, formData.date, API_URL]);
+  
   const handleChange = (
     e:
       | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -156,50 +177,56 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
       const serviceId = parseInt(formData.serviceId);
       const workerId = parseInt(formData.workerId);
 
+      // Validación de campos obligatorios
       if (!formData.clientDocumentId || isNaN(serviceId) || isNaN(workerId) || !formData.date || !formData.hour) {
         setError("Faltan datos obligatorios");
         setLoading(false);
         return;
       }
 
+      // Validación de fecha futura
+      const selectedDateTime = new Date(`${formData.date}T${formData.hour}`);
+      const now = new Date();
+      if (selectedDateTime < now) {
+        setError("No se puede seleccionar una fecha/hora pasada");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/appointments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientDocumentId: formData.clientDocumentId,
-          serviceId: parseInt(formData.serviceId),
-          workerId: parseInt(formData.workerId),
+          serviceId,
+          workerId,
           date: formData.date,
           hour: formData.hour,
         }),
       });
 
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+      if (!contentType?.includes('application/json')) {
         const text = await response.text();
         console.error('Respuesta no JSON:', text.substring(0, 200));
         throw new Error('Error del servidor. Inténtalo de nuevo.');
       }
 
       const responseData = await response.json();
-
       if (!response.ok) {
         throw new Error(responseData.error || responseData.message || 'Error al crear la cita.');
       }
 
       onClose();
-      
+      window.location.reload(); 
     } catch (err: unknown) {
-      console.error('Error adding appointment:', err);
       if (err instanceof Error) {
         if (err.message.includes('Cliente no encontrado')) {
           setError('Cliente no registrado. Verifique el documento de identidad.');
         } else if (err.message.includes('Servicio no encontrado')) {
           setError('Servicio no disponible.');
         } else if (err.message.includes('Especialista no encontrado')) {
-          setError('specialista no disponible.');
+          setError('Especialista no disponible.');
         } else {
           setError(err.message || 'Error al crear la cita. Inténtalo de nuevo.');
         }
@@ -210,6 +237,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
       setLoading(false);
     }
   };
+
 
   return ReactDOM.createPortal(
     <main className="fixed inset-0 z-50 flex items-center justify-center " style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -286,7 +314,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
               <ServiceFormField
                 label="Hora:"
                 placeholder="Selecciona una hora"
-                type="time"
+                options={availableHours.map(h => ({ value: h, label: h }))}
                 name="hour"
                 value={formData.hour}
                 onChange={handleChange}
