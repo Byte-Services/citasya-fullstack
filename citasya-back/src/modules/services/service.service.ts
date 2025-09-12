@@ -91,7 +91,6 @@ export class ServicesService {
 
         const serviceStatus = serviceData.status as ServiceStatus;
         if (!Object.values(ServiceStatus).includes(serviceStatus)) {
-            console.error('Estado de servicio no válido:', serviceData.status);
             return null;
         }
 
@@ -110,20 +109,26 @@ export class ServicesService {
      * @param id El ID del servicio a eliminar.
      */
     async delete(id: number): Promise<"hasRelations" | false | true> {
-        const service = await this.serviceRepository.findOne({
-            where: { id },
-            relations: ["workers", "appointment"], 
-        });
+        try {
+            const service = await this.serviceRepository.findOne({
+                where: { id },
+                relations: ["workers", "appointment"],
+            });
 
-        if (!service) return false;
+            if (!service) {
+                return false;
+            }
 
-        if ((service.appointment && service.appointment.length > 0) || 
-            (service.workers && service.workers.length > 0)) {
-            return "hasRelations";
+            if ((service.appointment?.length > 0) || (service.workers?.length > 0)) {
+                return "hasRelations";
+            }
+
+            const result = await this.serviceRepository.delete(id);
+            return result.affected !== 0;
+
+        } catch (error) {
+            throw error;
         }
-
-        const result = await this.serviceRepository.delete(id);
-        return result.affected !== 0;
     }
 
 }

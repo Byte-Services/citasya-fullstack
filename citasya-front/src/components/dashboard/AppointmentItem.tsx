@@ -1,19 +1,23 @@
+'use client';
 import * as React from "react";
 import { CiClock2 } from "react-icons/ci";
 import { VscAccount } from "react-icons/vsc";
+import { LuCalendarDays } from "react-icons/lu"; 
 
 interface AppointmentItemProps {
   clientName: string;
   service: string;
   specialist: string;
   time: string;
+  date: string;
 }
 
 export const AppointmentItem: React.FC<AppointmentItemProps> = ({
   clientName,
   service,
   specialist,
-  time
+  time,
+  date
 }) => {
   return (
     <div className="flex justify-between items-center p-6 bg-white border border-gray-200">
@@ -28,9 +32,15 @@ export const AppointmentItem: React.FC<AppointmentItemProps> = ({
           </p>
         </div>
       </div>
-      <div className="flex items-center text-sm">
-        <CiClock2 className="h-4 w-4 mr-1 text-gray-500" />
-        {time}
+      <div className="flex flex-col items-end text-sm text-gray-500">
+        <div className="flex items-center">
+            <CiClock2 className="h-4 w-4 mr-1" />
+            {time}
+        </div>
+        <div className="flex items-center">
+            <LuCalendarDays className="h-4 w-4 mr-1" />
+            {date}
+        </div>
       </div>
     </div>
   );

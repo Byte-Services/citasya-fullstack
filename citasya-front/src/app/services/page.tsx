@@ -31,6 +31,7 @@ const Services: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
   const [deletingServiceId, setDeletingServiceId] = useState('');
+  const [deletingErrorMessage, setDeletingErrorMessage] = useState<string | null>(null); 
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [specialties, setSpecialties] = useState<SpecialtyData[]>([]);
@@ -64,9 +65,11 @@ const Services: React.FC = () => {
   };
 
   const handleOpenDeleteModal = (serviceId: string) => {
-    setDeletingServiceId(serviceId);
-    setShowDeleteModal(true);
+      setDeletingServiceId(serviceId);
+      setDeletingErrorMessage(null); // Limpiamos cualquier error previo
+      setShowDeleteModal(true);
   };
+
   const handleCloseDeleteModal = () => {
     setShowDeleteModal(false);
     fetchServices();
@@ -152,22 +155,28 @@ const Services: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    try {
-      const response = await fetch(`${API_URL}/services/${deletingServiceId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error('Error al eliminar el servicio.');
+      try {
+          const response = await fetch(`${API_URL}/services/${deletingServiceId}`, {
+              method: 'DELETE',
+          });
+
+          if (!response.ok) {
+              // Si la respuesta no es 2xx, leemos el mensaje de error del backend
+              const errorData = await response.json();
+              // ➡️ Actualizamos el estado de error
+              setDeletingErrorMessage(errorData.error || 'Error al eliminar el servicio.');
+              return; // Detenemos la ejecución aquí
+          }
+
+          // Si la eliminación fue exitosa (código 204), limpiamos el error
+          setDeletingErrorMessage(null);
+          handleCloseDeleteModal();
+          fetchServices();
+      } catch (error: unknown) {
+          console.error('Error al eliminar el servicio:', error);
+          // ➡️ En caso de un error de red, también actualizamos el estado
+          setDeletingErrorMessage('Error de conexión. Intente de nuevo más tarde.');
       }
-      handleCloseDeleteModal();
-      fetchServices();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      } else {
-        console.error(String(error));
-      }
-    }
   };
 
   const handleEditService = (serviceData: ServiceData) => {
@@ -315,9 +324,13 @@ const Services: React.FC = () => {
 
       {/* Renderizado condicional del modal de eliminación */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
-          <DeleteService onClose={handleCloseDeleteModal} onConfirm={confirmDelete} />
-        </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
+              <DeleteService 
+                  onClose={handleCloseDeleteModal} 
+                  onConfirm={confirmDelete} 
+                  errorMessage={deletingErrorMessage ?? undefined} // ⬅️ Pasamos el mensaje de error aquí
+              />
+          </div>
       )}
 
       {/* Modal para administrar especialidades */}

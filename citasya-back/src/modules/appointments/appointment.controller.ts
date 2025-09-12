@@ -14,17 +14,25 @@ const appointmentsService = new AppointmentsService();
 export class AppointmentsController {
   private workerRepository = AppDataSource.getRepository(Worker);
   private appointmentRepository = AppDataSource.getRepository(Appointment);
-  /**
-   * Obtiene todas las citas.
-   * @param req - Solicitud HTTP
+    /**
+   * Obtiene todas las citas. Si se proporcionan fechas, filtra los resultados.
+   * @param req - Solicitud HTTP con opcionalmente startDate y endDate en query params
    * @param res - Respuesta HTTP
    * @returns Lista de citas en formato JSON
    */
   async getAllAppointments(req: Request, res: Response): Promise<Response> {
     try {
-      const appointments = await appointmentsService.findAll();
-      return res.json(appointments);
+      const { startDate, endDate } = req.query;
+
+      if (startDate && endDate) {
+        const appointments = await appointmentsService.findByDateRange(startDate as string, endDate as string);
+        return res.json(appointments);
+      } else {
+        const appointments = await appointmentsService.findAll();
+        return res.json(appointments);
+      }
     } catch (error) {
+      console.error("Error al obtener citas:", error);
       return res.status(500).json({ error: "Error al obtener citas." });
     }
   }

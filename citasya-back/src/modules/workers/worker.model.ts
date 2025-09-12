@@ -54,7 +54,7 @@ export class Worker {
     @OneToMany(() => Appointment, (appointment: Appointment) => appointment.worker)
     appointments!: Appointment[];
 
-    @ManyToMany(() => Service)
+    @ManyToMany(() => Service, service => service.workers)
     @JoinTable({
         name: "services_per_worker",
         joinColumn: {

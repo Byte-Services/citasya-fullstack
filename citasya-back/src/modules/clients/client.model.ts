@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from "typeorm";
 import { Appointment } from "../appointments/appointment.model.js";
 import { AgentMessage } from "../agent-messages/agent-message.model.js";
 
@@ -22,6 +22,9 @@ export class Client {
 
     @Column({ type: "text", nullable: true })
     notes!: string;
+
+    @CreateDateColumn({ type: "timestamp" })
+    createdAt!: Date;
 
     @OneToMany(() => Appointment, appointment => appointment.client)
     appointments!: Appointment[];

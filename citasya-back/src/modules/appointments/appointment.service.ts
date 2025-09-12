@@ -3,7 +3,7 @@ import { Appointment, AppointmentStatus } from "./appointment.model.js";
 import { Client } from "../clients/client.model.js";
 import { Worker } from "../workers/worker.model.js";
 import { Service } from "../services/service.model.js";
-import { Repository } from "typeorm";
+import { Repository, Between } from "typeorm";
 import { google } from "googleapis"; 
 
 // Configuración de Google Calendar API
@@ -39,6 +39,27 @@ export class AppointmentsService {
             relations: ["client", "worker", "service"],
             order: { date: "DESC", hour: "DESC" },
             take: 100,
+        });
+    }
+
+    /**
+     * Obtiene citas dentro de un rango de fechas.
+     * @param startDate - Fecha de inicio en formato string
+     * @param endDate - Fecha de fin en formato string
+     */
+    async findByDateRange(startDate: string, endDate: string): Promise<Appointment[]> {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        return this.appointmentRepository.find({
+            where: {
+                date: Between(start, end),
+            },
+            relations: ["client", "worker", "service"],
+            order: {
+                date: "ASC",
+                hour: "ASC",
+            },
         });
     }
 
