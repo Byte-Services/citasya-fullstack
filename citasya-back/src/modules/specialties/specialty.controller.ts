@@ -15,7 +15,6 @@ export class SpecialtiesController {
             const specialties = await specialtyService.findAll();
             return res.json(specialties);
         } catch (error) {
-            console.error('Error al obtener especialidades:', error);
             return res.status(500).json({ error: 'Error al obtener especialidades.' });
         }
     }
@@ -29,7 +28,6 @@ export class SpecialtiesController {
             const newSpecialty = await specialtyService.create(name);
             return res.status(201).json(newSpecialty);
         } catch (error) {
-            console.error('Error al crear especialidad:', error);
             return res.status(400).json({ error: (error as Error).message });
         }
     }   
@@ -47,7 +45,6 @@ export class SpecialtiesController {
             }
             return res.json(updatedSpecialty);
         } catch (error) {
-            console.error('Error al actualizar la especialidad:', error);
             return res.status(500).json({ error: 'Error al actualizar la especialidad.' });
         }
     }
@@ -64,7 +61,6 @@ export class SpecialtiesController {
             }
             return res.status(204).send();
         } catch (error) {
-            console.error("Error al eliminar especialidad:", error);
             return res.status(400).json({ error: (error as Error).message });
         }
     }

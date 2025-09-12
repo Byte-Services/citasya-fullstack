@@ -18,7 +18,6 @@ export class ClientController {
             const clients = await clientService.findAllClients();
             res.status(200).json(clients);
         } catch (error) {
-            console.error("Error fetching clients:", error);
             res.status(500).json({ message: "Error al obtener los clientes." });
         }
     }
@@ -41,7 +40,6 @@ export class ClientController {
 
             res.status(200).json(client);
         } catch (error) {
-            console.error(`Error fetching client with id ${req.params.id}:`, error);
             res.status(500).json({ message: "Error al obtener el perfil del cliente." });
         }
     }
@@ -52,15 +50,14 @@ export class ClientController {
             const client = await clientService.findClientByDocumentId(documentId);
 
             if (!client) {
-            res.status(404).json(null);
-            return;
+                res.status(404).json(null);
+                return;
             }
             res.status(200).json(client);
         } catch (error) {
-            console.error(`Error fetching client with documentId ${req.params.documentId}:`, error);
             res.status(500).json({ message: "Error al buscar el cliente." });
         }
-        }
+    }
 
     /**
      * Crea un nuevo cliente.
@@ -72,7 +69,6 @@ export class ClientController {
             const newClient = await clientService.createClient(clientData);
             res.status(201).json(newClient);
         } catch (error) {
-            console.error("Error creating client:", error);
             res.status(500).json({ message: "Error al crear el cliente." });
         }
     }
@@ -94,7 +90,6 @@ export class ClientController {
 
             res.status(200).json(updatedClient);
         } catch (error) {
-            console.error(`Error updating client with id ${req.params.id}:`, error);
             res.status(500).json({ message: "Error al actualizar el cliente." });
         }
     }
@@ -104,24 +99,23 @@ export class ClientController {
      * @return Respuesta vacía si se elimina o mensaje de error.
      */
     async deleteClient(req: Request, res: Response): Promise<void> {
-    try {
-        const { id } = req.params;
-        const result = await clientService.deleteClient(Number(id));
+        try {
+            const { id } = req.params;
+            const result = await clientService.deleteClient(Number(id));
 
-        if (!result.success) {
-        if (result.reason === "Cliente no encontrado") {
-            res.status(404).json({ message: "Cliente no encontrado." });
-        } else {
-            res.status(400).json({ message: "No se puede eliminar el cliente porque tiene citas pendientes o confirmadas." });
-        }
-        return;
-        }
+            if (!result.success) {
+                if (result.reason === "Cliente no encontrado") {
+                    res.status(404).json({ message: "Cliente no encontrado." });
+                } else {
+                    res.status(400).json({ message: "No se puede eliminar el cliente porque tiene citas pendientes o confirmadas." });
+                }
+                return;
+            }
 
-        res.status(204).send();
-    } catch (error) {
-        console.error(`Error deleting client with id ${req.params.id}:`, error);
-        res.status(500).json({ message: "Error al eliminar el cliente." });
-    }
+            res.status(204).send();
+        } catch (error) {
+            res.status(500).json({ message: "Error al eliminar el cliente." });
+        }
     }
 
 }

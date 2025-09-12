@@ -13,7 +13,6 @@ export class ServicesController {
             const services = await servicesService.findAll();
             return res.json(services);
         } catch (error) {
-            console.error('Error al obtener servicios:', error);
             return res.status(500).json({ error: 'Error al obtener servicios.' });
         }
     }
@@ -32,7 +31,6 @@ export class ServicesController {
             const services = await servicesService.findBySpecialtyId(specialtyId);
             return res.status(200).json(services);
         } catch (error) {
-            console.error(`Error al obtener servicios para la especialidad con ID ${specialtyId}:`, error);
             return res.status(500).json({ message: 'Error al obtener los servicios de la especialidad.' });
         }
     }
@@ -53,7 +51,6 @@ export class ServicesController {
             }
             return res.status(201).json(newService);
         } catch (error) {
-            console.error('Error al crear un nuevo servicio:', error);
             return res.status(500).json({ error: 'Error al crear el servicio.' });
         }
     }
@@ -72,7 +69,6 @@ export class ServicesController {
             }
             return res.json(updatedService);
         } catch (error) {
-            console.error('Error al actualizar el servicio:', error);
             return res.status(500).json({ error: 'Error al actualizar el servicio.' });
         }
     }
@@ -98,7 +94,6 @@ export class ServicesController {
 
             return res.status(204).send();
         } catch (error) {
-            console.error('Error al eliminar el servicio:', error);
             return res.status(500).json({ error: "Error al eliminar el servicio." });
         }
     }

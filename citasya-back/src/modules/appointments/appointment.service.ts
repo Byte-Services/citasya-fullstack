@@ -162,7 +162,6 @@ export class AppointmentsService {
                 await queryRunner.manager.save(savedAppointment); // actualizar con google_event_id
                 }
             } catch (calendarError) {
-                console.error("Error creando evento en Google Calendar:", calendarError);
                 // No revertimos la transacción de BD si falla Google Calendar
             }
 
@@ -202,7 +201,7 @@ export class AppointmentsService {
             });
             appointment.calendar_event_id = ''; // limpiar el eventId
             } catch (err) {
-            console.error("Error eliminando evento en Google Calendar:", err);
+                // No hacer nada si falla la eliminación en Google Calendar
             }
         }
 

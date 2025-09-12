@@ -89,7 +89,6 @@ export class WorkerController {
 
       res.status(204).send();
     } catch (error) {
-      console.error(`Error deleting worker with id ${req.params.id}:`, error);
       res.status(500).json({ message: "Error al eliminar el trabajador." });
     }
   }

@@ -19,7 +19,6 @@ export class DashboardController {
             const data = await dashboardService.getDashboardStats(startDate as string, endDate as string);
             return res.status(200).json(data);
         } catch (error) {
-            console.error('Error fetching dashboard stats:', error);
             return res.status(500).json({ message: 'Error interno del servidor al obtener estadísticas.' });
         }
     }
@@ -39,7 +38,6 @@ export class DashboardController {
             const appointments = await dashboardService.getAppointmentsByDateRange(startDate as string, endDate as string);
             return res.status(200).json(appointments);
         } catch (error) {
-            console.error('Error fetching dashboard appointments:', error);
             return res.status(500).json({ message: 'Error interno del servidor al obtener citas.' });
         }
     }
@@ -59,7 +57,6 @@ export class DashboardController {
             const chartData = await dashboardService.getServicesChartData(startDate as string, endDate as string);
             return res.status(200).json(chartData);
         } catch (error) {
-            console.error('Error fetching services chart data:', error);
             return res.status(500).json({ message: 'Error interno del servidor al obtener datos del gráfico.' });
         }
     }
