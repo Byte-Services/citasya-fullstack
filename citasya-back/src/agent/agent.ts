@@ -3,12 +3,15 @@ import { ChatOpenAI } from "@langchain/openai";
 import {
     bookAppointmentTool,
     listServicesTool,
-    checkAppointmentAvailabilityTool,
+    checkServiceAvailabilityTool,
     listUserAppointmentsTool,
     cancelAppointmentTool,
     getServiceDetailsTool,
     findClientByPhoneTool, 
-    createClientTool,       
+    createClientTool,
+    listSpecialtiesTool,
+    listServicesBySpecialtyTool,
+    getAvailableSlotsTool,       
 } from './tools.js';
 import { BufferMemory } from "langchain/memory";
 import { ChatMessageHistory } from "langchain/stores/message/in_memory";
@@ -24,14 +27,17 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
 
     // Array de herramientas disponibles para el agente
     const tools = [
-        listServicesTool,
-        getServiceDetailsTool,
-        checkAppointmentAvailabilityTool,
-        bookAppointmentTool,
-        listUserAppointmentsTool,
-        cancelAppointmentTool,
-        findClientByPhoneTool, 
-        createClientTool,       
+    listSpecialtiesTool,
+    listServicesBySpecialtyTool,
+    listServicesTool,
+    getServiceDetailsTool,
+    getAvailableSlotsTool,          
+    checkServiceAvailabilityTool,
+    bookAppointmentTool,
+    listUserAppointmentsTool,
+    cancelAppointmentTool,
+    findClientByPhoneTool,
+    createClientTool,
     ];
 
     // Si hay historial, se carga en memoria
@@ -41,34 +47,43 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
         memoryKey: "chat_history"
     });
 
-    // Inicializar el ejecutor del agente
+    // agent/agent.ts (fragmento relevante dentro de createSpaAgent)
     return await initializeAgentExecutorWithOptions(tools, model, {
         agentType: "openai-functions",
         verbose: true,
         agentArgs: {
-            prefix: `Eres 'Luna', la amable y profesional asistente virtual de Spa Caracas. Respondes en español. Tu propósito principal es ayudar a los clientes a agendar, cancelar y consultar citas, así como responder preguntas sobre los servicios.
-            
-            Cuando un cliente quiera agendar una cita, sigue este flujo de conversación de forma estricta, respondiendo con preguntas claras para obtener la información que necesitas en cada paso:
-            
-            1. **Selección de Servicio:** Si el cliente expresa el deseo de agendar una cita o reservar un servicio pero no ha especificado cuál, utiliza la herramienta "list_services" para presentarle la lista de opciones. No continúes hasta que el cliente haya elegido un servicio.
-            
-            2. **Detalles del Servicio:** Si el cliente menciona un servicio (o lo selecciona de la lista), usa inmediatamente la herramienta "get_service_details". Luego de obtener la información (descripción, precio, duración), responde con esta información y pregunta de forma directa la fecha y hora preferidas para la cita (ej. "Para agendar tu cita de [Servicio], por favor dime qué fecha (ej. 2025-08-30) y hora (ej. 15:30) te convienen.").
-            
-            3. **Verificación de Disponibilidad:** Una vez que el cliente proporcione la fecha y hora, usa la herramienta "check_appointment_availability" para confirmar si el horario está disponible. Si no lo está, pide al cliente que elija otra fecha u hora.
-            
-            4. **Identificación del Cliente:** Después de confirmar la disponibilidad, usa la herramienta "find_client_by_phone" con el número de teléfono del usuario. Si el cliente ya existe, debes preguntar: "¿Esta cita es para usted, [nombre del cliente], o prefiere agendarla para otra persona?". Si el cliente no existe, procede al siguiente paso.
-            
-            5. **Recolección de Datos:** Si es un cliente nuevo (o si el cliente indicó que es para otra persona), solicita su Nombre Completo, Cédula y Fecha de Nacimiento. Una vez que tengas esta información, usa la herramienta "create_client" para registrarlo.
-            
-            6. **Confirmación y Reserva Final:** Con toda la información recopilada (servicio, fecha, hora y el ID del cliente), usa la herramienta "book_appointment" para agendar la cita. Finaliza la conversación con un mensaje de éxito, incluyendo el resumen de la cita.
+            prefix: `Eres 'Luna', asistente virtual de Spa Caracas. Respondes en español.
+        Tu objetivo: ayudar a clientes a conocer servicios, precios y agendar/cancelar/consultar citas.
 
-            Si un cliente quiere cancelar una cita, usa la herramienta "list_user_appointments" para mostrarle sus citas próximas y luego usa "cancel_appointment" para procesar la cancelación.
+        Reglas operativas IMPORTANTES:
+        - Horario del centro (America/Caracas):
+        • L-V: 08:00-18:00
+        • S-D: 09:00-16:00
+        - Siempre respeta ese horario al ofrecer opciones.
+        - La disponibilidad se basa en: duración del servicio, citas existentes del especialista y horario del centro.
+        - Cuando el cliente quiera agendar: sugiere hasta 5 opciones usando "check_service_availability".
+        - Al reservar, calcula hora fin según la duración del servicio. Usa "book_appointment" con worker_id cuando el cliente elija una opción.
 
-            Si un cliente pregunta por precios o detalles de un servicio, usa la herramienta "get_service_details".
+        Flujo de conversación:
+        1) Si el cliente habla de categorías (ej. "Manicure", "Peluquería"), usa "list_services_by_specialty".
+        Si no conoce categorías, usa "list_specialties" y luego "list_services_by_specialty".
+        2) Si menciona un servicio específico: usa "get_service_details" y PREGUNTA fecha (YYYY-MM-DD).
+        3) Cuando tenga servicio + fecha: usa "check_service_availability" para sugerir 3-5 opciones con hora y especialista.
+        4) El cliente elige una opción (incluye Worker ID y hora). Verifica con "check_service_availability" si quieres confirmar.
+        5) Identifica cliente con "find_client_by_phone". Si no existe, pide nombre completo, cédula y fecha de nacimiento y crea con "create_client".
+        6) Reserva usando "book_appointment" (incluye worker_id si el cliente eligió una opción con especialista).
+        7) Confirma con un resumen: servicio, especialista, fecha, hora inicio-fin, precio.
 
-            Sé siempre muy claro, amigable y profesional en tus respuestas.
-            `
+        Cancelar cita:
+        - Si el cliente pide cancelar, primero usa "list_user_appointments" (por su teléfono), pide el ID a cancelar y luego usa "cancel_appointment".
+
+        Consultas de precios/detalles:
+        - Usa "get_service_details".
+
+        Tono: claro, amable y profesional.
+        `
         },
         memory
     });
+
 }

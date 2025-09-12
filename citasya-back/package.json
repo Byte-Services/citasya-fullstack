@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Backend para CRM de CitasYa con agente conversacional",
   "main": "dist/index.js",
- "scripts": {
-  "dev": "nodemon --exec tsx src/index.ts",
-  "build": "tsc",
-  "start": "node dist/index.js"
+  "scripts": {
+    "dev": "nodemon --exec tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/luxon": "^3.7.1",
     "@types/node": "^24.1.0",
     "@types/pg": "^8.15.5",
     "nodemon": "^3.1.10",
@@ -37,6 +38,7 @@
     "express": "^5.1.0",
     "googleapis": "^154.1.0",
     "langchain": "^0.3.30",
+    "luxon": "^3.7.1",
     "module": "^1.2.5",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",

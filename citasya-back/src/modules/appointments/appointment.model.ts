@@ -25,11 +25,11 @@ export class Appointment {
     @Column({ type: "date" })
     date!: Date;
 
-    @Column({ type: "date", nullable: true })
-    end_date!: Date;
-
     @Column({ type: "time" })
     hour!: string;
+
+    @Column({ type: "time", nullable: true })
+    end_time!: string | null;
 
     @Column({
         type: "enum",
@@ -54,4 +54,9 @@ export class Appointment {
 
     @ManyToOne(() => Worker, worker => worker.appointments)
     worker!: Worker;
+
+      // Para poder cancelar también en Google Calendar — NUEVO
+    @Column({ type: "varchar", nullable: true })
+    calendar_event_id!: string | null;
 }
+
