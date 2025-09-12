@@ -45,9 +45,9 @@ export class Service {
     @JoinColumn({ name: "specialty_id" })
     specialty!: Specialty;
 
-    @ManyToMany(() => Worker)
+    @ManyToMany(() => Worker, worker => worker.services)
     workers!: Worker[];
 
     @OneToMany(() => Appointment, appointment => appointment.service)
-    appointments!: Appointment[];
+    appointment!: Appointment[];
 }

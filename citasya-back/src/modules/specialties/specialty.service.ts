@@ -2,6 +2,14 @@ import { AppDataSource } from "../../data-source.js";
 import { Specialty } from "./specialty.model.js";
 import { Repository } from "typeorm";
 
+function normalizeString(str: string): string {
+    return str
+        .normalize("NFD") 
+        .replace(/[\u0300-\u036f]/g, "") 
+        .toLowerCase()
+        .trim();
+}
+
 /**
  * Clase de servicio para manejar la lógica de negocio de las especialidades.
  */
@@ -11,7 +19,7 @@ export class SpecialtiesService {
     constructor() {
         this.specialtyRepository = AppDataSource.getRepository(Specialty);
     }
-
+    
     /**
      * Obtiene todas las especialidades de la base de datos.
      * @returns Una promesa que resuelve con un array de especialidades.
@@ -37,9 +45,21 @@ export class SpecialtiesService {
      * @returns Una promesa que resuelve con la especialidad creada.
      */
     async create(name: string): Promise<Specialty> {
+        const specialties = await this.specialtyRepository.find();
+        const normalizedName = normalizeString(name);
+
+        const exists = specialties.some(
+            (s) => normalizeString(s.name) === normalizedName
+        );
+
+        if (exists) {
+            throw new Error("La especialidad ya existe.");
+        }
+
         const newSpecialty = this.specialtyRepository.create({ name });
         return this.specialtyRepository.save(newSpecialty);
     }
+
 
     /**
      * Actualiza una especialidad existente.
@@ -62,7 +82,19 @@ export class SpecialtiesService {
      * @returns Una promesa que resuelve a true si la especialidad fue eliminada, false de lo contrario.
      */
     async delete(id: number): Promise<boolean> {
+        const specialty = await this.specialtyRepository.findOne({
+            where: { id },
+            relations: ["services"],
+        });
+
+        if (!specialty) return false;
+
+        if (specialty.services && specialty.services.length > 0) {
+            throw new Error("No se puede eliminar: existen servicios asociados.");
+        }
+
         const result = await this.specialtyRepository.delete(id);
         return result.affected !== 0;
     }
+
 }

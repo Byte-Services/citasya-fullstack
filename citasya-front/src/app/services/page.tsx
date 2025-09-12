@@ -8,6 +8,7 @@ import { DeleteService } from '../../components/services/DeleteService';
 import { VscAdd } from "react-icons/vsc";
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from "@/components/InputField";
+import { toast } from 'react-hot-toast';
 
 interface SpecialtyData {
   id: number;
@@ -40,6 +41,7 @@ const Services: React.FC = () => {
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [servicesError, setServicesError] = useState<string | null>(null);
+  const [newSpecialtyError, setNewSpecialtyError] = useState<string | null>(null);
 
   const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin`;
 
@@ -81,47 +83,45 @@ const Services: React.FC = () => {
       try {
         const response = await fetch(`${API_URL}/specialties`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: newSpecialtyValue.trim() }),
         });
-  
+
         if (!response.ok) {
-          throw new Error('Error al agregar la especialidad. Es posible que ya exista.');
+          const errorData = await response.json();
+          // ⬇️ Guardamos el error en estado en lugar de alert
+          setNewSpecialtyError(errorData.error || 'Error al agregar la especialidad.');
+          return;
         }
-  
+
         setNewSpecialtyValue('');
-        fetchSpecialties(); 
+        setNewSpecialtyError(null); // limpiar error si se agregó bien
+        fetchSpecialties();
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error(error.message);
-        } else {
-          console.error(String(error));
-        }
+        setNewSpecialtyError(error instanceof Error ? error.message : String(error));
       }
     }
   };
-  
+
+
   const handleRemoveSpecialty = async (id: number) => {
     try {
       const response = await fetch(`${API_URL}/specialties/${id}`, {
         method: 'DELETE',
       });
-  
+
       if (!response.ok) {
-        throw new Error('Error al eliminar la especialidad. Asegúrate de que no haya servicios asociados.');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar la especialidad.');
       }
-  
-      fetchSpecialties(); 
+
+      fetchSpecialties();
+      toast.success("Especialidad eliminada correctamente");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message);
-      } else {
-        console.error(String(error));
-      }
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
+
 
   const handleSpecialtyChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement> | { target: { name?: string; value: string | string[] } }
@@ -257,8 +257,8 @@ const Services: React.FC = () => {
             {/* Select de especialidad */}
             <div className="w-full sm:w-50">
               <ServiceFormField
-                placeholder="Selecciona una categoría"
-                label="Categoría"
+                placeholder="Selecciona una especialidad"
+                label="Especialidad"
                 options={specialtySelectOptions}
                 value={selectedSpecialty}
                 onChange={handleSpecialtyChange}
@@ -371,6 +371,11 @@ const Services: React.FC = () => {
               Agregar
               </button>
             </div>
+            {newSpecialtyError && (
+              <p className="text-red-500 text-sm flex items-center justify-center mt-3 text-center w-full">
+                {newSpecialtyError}
+              </p>
+            )}
           </div>
         </div>
       )}

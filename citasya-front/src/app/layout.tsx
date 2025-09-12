@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 import { Header } from "../components/Header";
+import { Toaster } from "react-hot-toast";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({
         <div>
           {children}
         </div>
+        <Toaster position="top-center" reverseOrder={false} />
       </body>
     </html>
   );

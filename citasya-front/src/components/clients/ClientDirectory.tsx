@@ -70,18 +70,48 @@ export function ClientDirectory() {
     fetchClients();
   }, []);
 
+  const normalizePhone = (phone: string) => {
+    if (!phone) return "";
+    // Eliminar todo lo que no sea número
+    let digits = phone.replace(/\D/g, "");
+
+    // Si el número tiene 11 dígitos y empieza con 0 → convertir a 58XXXXXXXXXX
+    if (digits.length === 11 && digits.startsWith("0")) {
+      digits = "58" + digits.slice(1);
+    }
+
+    // Dejar números más cortos como están para que includes funcione
+    return digits;
+  };
+
+  const normalizePhoneForSearch = (input: string) => {
+    if (!input) return "";
+    let digits = input.replace(/\D/g, "");
+
+    // Si empieza con 0 y tiene menos de 12 dígitos, asumir código nacional
+    if (digits.startsWith("0")) {
+      digits = "58" + digits.slice(1);
+    }
+
+    return digits;
+  };
+
+
+
   const filteredClients = clients.filter((client) => {
     const searchNC = searchNameOrCedula.toLowerCase();
-    const searchPh = searchPhone.toLowerCase();
+    const searchPh = normalizePhoneForSearch(searchPhone);
 
     const matchesNameOrCedula =
       client.nombre.toLowerCase().includes(searchNC) ||
       client.cedula.toLowerCase().includes(searchNC);
 
-    const matchesPhone = client.telefono.toLowerCase().includes(searchPh);
+    const matchesPhone = normalizePhone(client.telefono).includes(searchPh);
 
     return matchesNameOrCedula && matchesPhone;
   });
+
+
 
   const handleOpenNewClientModal = () => setShowNewClientModal(true);
 
@@ -102,6 +132,16 @@ export function ClientDirectory() {
     setSelectedClient(null);
     fetchClients();
   };
+
+  const formatPhone = (phone: string) => {
+  if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
+
+  const area = phone.slice(2, 5);       // "414"
+  const number = phone.slice(5);        // "3252123"
+
+  return `0${area}-${number}`;          // "0414-3252123"
+};
+
 
   return (
     <div className="relative flex w-full h-screen" style={{ fontFamily: 'Poppins, sans-serif'}}>
@@ -178,7 +218,7 @@ export function ClientDirectory() {
                           {client.nombre}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-600">
-                          {client.telefono}
+                          {formatPhone(client.telefono)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-600">
                           <div className="flex space-x-2">

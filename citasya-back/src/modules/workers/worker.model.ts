@@ -56,4 +56,5 @@ export class Worker {
         }
     })
     services!: Service[];
+
 }

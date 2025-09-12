@@ -13,11 +13,15 @@ interface FullClientData {
   phone: string;
   notes: string;
   appointments: {
-    service: string;
     date: string;
-    price: number;
+    status: string;
+    service: {
+      name: string;
+      price: string;
+    };
   }[];
 }
+
 
 interface ClientProfileProps {
   clientId: number; 
@@ -67,22 +71,20 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
    * Maneja la eliminación de un cliente.
    */
   const handleDeleteClient = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients/${clientId}`, {
-        method: "DELETE",
-      });
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients/${clientId}`, {
+      method: "DELETE",
+    });
 
-      if (!response.ok) {
-        throw new Error(`Error al eliminar el cliente: ${response.statusText}`);
-      }
-
-      setShowDeleteModal(false);
-      onCloseProfile(); 
-    } catch (e) {
-      console.error("Error deleting client:", e);
-
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // devolvemos el mensaje como un Error, pero no lo logeamos aquí
+      return Promise.reject(new Error(errorData.message || "No se pudo eliminar el cliente."));
     }
+
+    setShowDeleteModal(false);
+    onCloseProfile(); 
   };
+
 
   if (loading) {
     return (
@@ -113,13 +115,41 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
     cedula: fullClientData.documentId,
     telefono: fullClientData.phone,
     notes: fullClientData.notes,
-    totalInvertido: fullClientData.appointments.reduce((sum, appt) => sum + (appt.price || 0), 0) + "$",
   };
 
-  const history = fullClientData.appointments.map((appt) => ({
-    servicio: appt.service,
-    fecha: new Date(appt.date).toISOString().split('T')[0].split('-').reverse().join('-'),
+  // Total invertido solo con citas concluidas
+  const totalInvertido = fullClientData.appointments
+    .filter(appt => appt.status === "Concluida")
+    .reduce((sum, appt) => sum +  parseFloat(appt.service?.price ?? 0), 0);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    // Ajuste para evitar desfase de día
+    const day = date.getUTCDate().toString().padStart(2, "0");
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // 0-index
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Historial: últimas 5 citas concluidas, más recientes primero
+  const recentAppointments = fullClientData.appointments
+    .filter(appt => appt.status === "Concluida") // solo concluidas
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+    .map(appt => ({
+      servicio: appt.service?.name || "Servicio desconocido",
+      fecha: formatDate(appt.date),
   }));
+
+
+  const formatPhone = (phone: string) => {
+    if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
+
+    const area = phone.slice(2, 5);       // "414"
+    const number = phone.slice(5);        // "3252123"
+
+    return `0${area}-${number}`;          // "0414-3252123"
+  };
 
   return (
     <div className="flex bg-gray-100 " style={{ fontFamily: 'Poppins, sans-serif'}}>
@@ -153,7 +183,7 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
         <div className="mt-4 px-8">
           <div className="text-xs text-neutral-600">Teléfono:</div>
           <div className="flex flex-col px-5 py-3 mt-2 text-xs bg-white rounded-lg shadow-sm text-neutral-600">
-            <div>{clientData.telefono}</div>
+            <div>{formatPhone(clientData.telefono)}</div>
           </div>
         </div>
 
@@ -173,41 +203,54 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
         </h3>
 
         <div className="px-8 mt-4 w-full">
-          <table className="min-w-full shadow-sm rounded-lg">
+          <table className="min-w-full shadow-sm rounded-lg table-fixed">
             <thead className="bg-neutral-100 border-b border-gray-200">
               <tr>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider">
+                <th 
+                  scope="col" 
+                  className="w-2/3 px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider"
+                >
                   Servicio
                 </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider">
+                <th 
+                  scope="col" 
+                  className="w-1/3 px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider"
+                >
                   Fecha
                 </th>
               </tr>
             </thead>
-              <tbody className="bg-white overflow-y-auto max-h-60">
-                  {history.length > 0 ? (
-                  history.map((entry, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-600">{entry.servicio}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-600">{entry.fecha}</td>
-                    </tr>
-                    ))
-                        ) : (
-                    <tr>
-                      <td colSpan={2} className="px-6 py-4 text-center text-xs text-gray-500">
-                        No hay citas en el historial.
-                      </td>
-                    </tr>
-                        )}
-              </tbody>
+            <tbody className="bg-white max-h-60">
+              {recentAppointments.length > 0 ? (
+                recentAppointments.map((entry, index) => (
+                  <tr key={index} className="border-b border-gray-200">
+                    <td 
+                      className="px-6 py-4 text-xs text-neutral-600 break-words text-center"
+                    >
+                      {entry.servicio}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-neutral-600 text-center">
+                      {entry.fecha}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={2} className="px-6 py-4 text-center text-xs text-gray-500">
+                    No hay citas en el historial.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
+
 
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
           Total Invertido
         </h3>
         <div className="self-center text-2xl font-bold text-center leading-[66px] text-[#629BB5]">
-          {clientData.totalInvertido}
+          {totalInvertido.toLocaleString("en-US", { style: "currency", currency: "USD" })}
         </div>
 
         <button onClick={() => setShowDeleteModal(true)} className="flex justify-center items-center self-center px-10 py-3 mt-6 text-sm font-medium text-center rounded-lg bg-[#FEE2E2] text-[#B91C1C] shadow-md w-full max-w-[141px] hover:bg-[#FFC1C1] transition-colors">
@@ -216,7 +259,7 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
       </aside>
 
       {showEditModal && (
-        <EditarCliente
+        <EditarCliente 
           onClose={() => setShowEditModal(false)}
           clientData={{
             id: fullClientData.id,

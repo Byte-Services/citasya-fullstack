@@ -41,23 +41,28 @@ export class ServicesService {
      * Crea un nuevo servicio.
      * @param serviceData Los datos del servicio a crear.
      */
-    async create(serviceData: { name: string, specialty_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null> {
+    async create(serviceData: { name: string, specialty_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null | "duplicate"> {
         const specialty = await this.specialtyRepository.findOneBy({ id: serviceData.specialty_id });
         if (!specialty) {
-            return null; // Retorna null si la especialidad no existe
+            return null;
         }
 
-        // Validación y asignación del estado
+        const existing = await this.serviceRepository.findOne({
+            where: { name: serviceData.name, specialty: { id: serviceData.specialty_id } },
+            relations: ["specialty"]
+        });
+        if (existing) {
+            return "duplicate";
+        }
+
         const serviceStatus = serviceData.status as ServiceStatus;
         if (!Object.values(ServiceStatus).includes(serviceStatus)) {
-            // Maneja el caso de un estado no válido si es necesario
-            console.error('Estado de servicio no válido:', serviceData.status);
             return null;
         }
 
         const newService = this.serviceRepository.create({
             name: serviceData.name,
-            specialty, 
+            specialty,
             description: serviceData.description,
             minutes_duration: serviceData.minutes_duration,
             price: serviceData.price,
@@ -66,6 +71,7 @@ export class ServicesService {
 
         return this.serviceRepository.save(newService);
     }
+
 
     /**
      * Actualiza un servicio existente.
@@ -103,8 +109,21 @@ export class ServicesService {
      * Elimina un servicio por su ID.
      * @param id El ID del servicio a eliminar.
      */
-    async delete(id: number): Promise<boolean> {
+    async delete(id: number): Promise<"hasRelations" | false | true> {
+        const service = await this.serviceRepository.findOne({
+            where: { id },
+            relations: ["workers", "appointment"], 
+        });
+
+        if (!service) return false;
+
+        if ((service.appointment && service.appointment.length > 0) || 
+            (service.workers && service.workers.length > 0)) {
+            return "hasRelations";
+        }
+
         const result = await this.serviceRepository.delete(id);
         return result.affected !== 0;
     }
+
 }

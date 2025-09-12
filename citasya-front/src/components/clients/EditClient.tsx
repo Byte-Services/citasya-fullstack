@@ -5,7 +5,6 @@ import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField'; 
 
-
 interface ClientData {
   id: number;
   nombre: string;
@@ -21,7 +20,17 @@ interface EditarClienteProps {
 }
 
 export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientData, onClientUpdated }) => {
-  const [formData, setFormData] = useState({ ...clientData });
+  const toLocalPhone = (phone: string) => {
+    if (phone.startsWith("58") && phone.length === 12) {
+      return "0" + phone.slice(2);
+    }
+    return phone;
+  };
+
+  const [formData, setFormData] = useState({
+    ...clientData,
+    telefono: toLocalPhone(clientData.telefono),
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,14 +46,55 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
     setFormData(prev => ({ ...prev, [name as string]: newValue }));
   };
 
+  const validateForm = () => {
+    // Validar nombre
+    if (!formData.nombre.trim()) {
+      return "El nombre es obligatorio.";
+    }
+
+    // Validar cédula
+    const cedulaRegex = /^\d{1,8}$/;
+    if (!formData.cedula.trim()) {
+      return "El campo cédula es obligatorio.";
+    }
+    if (!cedulaRegex.test(formData.cedula)) {
+      return "La cédula debe tener máximo 8 dígitos numéricos.";
+    }
+    if (!cedulaRegex.test(formData.cedula)) {
+      return "La cédula debe tener exactamente 8 números.";
+    }
+
+    // Validar teléfono (formato input: 0414xxxxxxx)
+    if (!formData.telefono.trim()) {
+      return "El campo teléfono es obligatorio.";
+    }
+    const telefonoRegex = /^(0414|0416|0424|0426|0412|0422)\d{7}$/;
+    if (!telefonoRegex.test(formData.telefono)) {
+      return "El teléfono debe comenzar con 0414, 0416, 0424, 0426, 0412 o 0422 y tener 11 dígitos en total.";
+    }
+
+    return null;
+  };
+
   const handleUpdateClient = async () => {
     setLoading(true);
     setError(null);
 
+    // Validar antes de enviar
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      setLoading(false);
+      return;
+    }
+
+    // Transformar teléfono de 0414xxxxxxx → 58414xxxxxxx
+    const formattedPhone = formData.telefono.replace(/^0/, "58");
+
     const clientUpdateData = {
       name: formData.nombre,
       documentId: formData.cedula,
-      phone: formData.telefono,
+      phone: formattedPhone,
       notes: formData.notes, 
     };
 
@@ -69,8 +119,17 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
     }
   };
 
+  const formatPhone = (phone: string) => {
+    if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
+
+    const area = phone.slice(2, 5);       // "414"
+    const number = phone.slice(5);        // "3252123"
+
+    return `0${area}${number}`;          // "0414-3252123"
+  };
+
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="fixed inset-0  flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <main className="max-w-[679px] w-full">
         <div className="flex flex-col py-9 w-full bg-neutral-100 rounded-[30px] shadow-lg">
           <div className="flex flex-row justify-between items-center w-full px-10">
@@ -87,7 +146,13 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
             </button>
           </div>
 
-          <form className="flex flex-col px-10 mt-8 w-full text-neutral-600" onSubmit={(e) => {e.preventDefault(); handleUpdateClient();}}>
+          <form
+            className="flex flex-col px-10 mt-8 w-full text-neutral-600"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleUpdateClient();
+            }}
+          >
             <ServiceFormField
               label="Nombre:"
               placeholder="Nombre del cliente"
@@ -106,9 +171,9 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
             />
             <ServiceFormField
               label="Teléfono:"
-              placeholder="Ej: 584123456789"
+              placeholder="Ej: 04141234567"
               name="telefono"
-              value={formData.telefono}
+              value={formatPhone(formData.telefono)}
               onChange={handleChange}
               className='mb-4'
             />

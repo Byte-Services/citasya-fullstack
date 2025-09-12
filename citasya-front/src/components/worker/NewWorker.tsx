@@ -176,7 +176,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
 
 
   return (
-    <main className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ fontFamily: 'Poppins, sans-serif'}}>
+    <main className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/20 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif'}}>
       <div className="max-w-xl w-full mx-4 sm:mx-6 md:mx-auto">
         <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl">
           <header className="flex justify-between items-center w-full">

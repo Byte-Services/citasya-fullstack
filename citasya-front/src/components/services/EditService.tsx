@@ -5,7 +5,6 @@ import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { SpecialtyData, ServiceData } from '../../types/service';
 
-
 interface EditServiceProps {
   onClose: () => void;
   serviceData: ServiceData;
@@ -24,8 +23,25 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? ''}/admin`;
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.name.trim()) newErrors.name = "El nombre es obligatorio.";
+    if (!formData.specialty_id) newErrors.specialty_id = "Debes seleccionar una especialidad.";
+    if (!formData.description.trim()) newErrors.description = "La descripción es obligatoria.";
+    if (!formData.minutes_duration || parseInt(formData.minutes_duration, 10) <= 0) {
+      newErrors.minutes_duration = "Duración inválida.";
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      newErrors.price = "Precio inválido.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (
     e:
@@ -35,15 +51,18 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
     const { name, value } = e.target;
     if (!name) return;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: "" })); // limpiar error al escribir
   };
 
   const handleEditService = async () => {
+    if (!validateForm()) return;
+
     setLoading(true);
     setError(null);
     try {
       const payload = {
         ...formData,
-        specialty_id: parseInt(formData.specialty_id, 10), 
+        specialty_id: parseInt(formData.specialty_id, 10),
         minutes_duration: parseInt(formData.minutes_duration, 10),
         price: parseFloat(formData.price),
       };
@@ -93,54 +112,66 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
           <div className="flex flex-wrap gap-10">
-            <ServiceFormField
-              label="Nombre del servicio:"
-              placeholder="Ingresa nombre..."
-              className="flex-1"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-            />
-            <ServiceFormField
-              label="Especialidad:"
-              placeholder="Selecciona una especialidad"
-              options={specialties.map(s => ({ value: s.id.toString(), label: s.name }))} 
-              className="flex-1"
-              name="specialty_id"
-              value={formData.specialty_id} 
-              onChange={handleChange}
-            />
+            <div className="flex-1">
+              <ServiceFormField
+                label="Nombre del servicio:"
+                placeholder="Ingresa nombre..."
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+              />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+            </div>
+
+            <div className="flex-1">
+              <ServiceFormField
+                label="Especialidad:"
+                placeholder="Selecciona una especialidad"
+                options={specialties.map(s => ({ value: s.id.toString(), label: s.name }))}
+                name="specialty_id"
+                value={formData.specialty_id}
+                onChange={handleChange}
+              />
+              {errors.specialty_id && <p className="text-red-500 text-sm">{errors.specialty_id}</p>}
+            </div>
           </div>
 
-          <ServiceFormField
-            label="Descripción"
-            placeholder="Escribe una descripción del servicio..."
-            type="textarea"
-            className="mt-1"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-          />
+          <div className="mt-2">
+            <ServiceFormField
+              label="Descripción"
+              placeholder="Escribe una descripción del servicio..."
+              type="textarea"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+            />
+            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+          </div>
 
           <div className="flex flex-wrap gap-10 mt-2">
-            <ServiceFormField
-              label="Duración (min):"
-              placeholder="Ej: 60"
-              type="number"
-              className="flex-1"
-              name="minutes_duration"
-              value={formData.minutes_duration}
-              onChange={handleChange}
-            />
-            <ServiceFormField
-              label="Precio ($):"
-              placeholder="Ej: 50.00"
-              type="number"
-              className="flex-1"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-            />
+            <div className="flex-1">
+              <ServiceFormField
+                label="Duración (min):"
+                placeholder="Ej: 60"
+                type="number"
+                name="minutes_duration"
+                value={formData.minutes_duration}
+                onChange={handleChange}
+              />
+              {errors.minutes_duration && <p className="text-red-500 text-sm">{errors.minutes_duration}</p>}
+            </div>
+
+            <div className="flex-1">
+              <ServiceFormField
+                label="Precio ($):"
+                placeholder="Ej: 50.00"
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+              />
+              {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-10 mt-2">
@@ -148,7 +179,6 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
               label="Estado:"
               placeholder="Selecciona un estado"
               options={statusOptions}
-              className="flex-1"
               name="status"
               value={formData.status}
               onChange={handleChange}

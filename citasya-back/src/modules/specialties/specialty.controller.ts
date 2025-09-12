@@ -29,10 +29,10 @@ export class SpecialtiesController {
             const newSpecialty = await specialtyService.create(name);
             return res.status(201).json(newSpecialty);
         } catch (error) {
-            console.error('Error al crear una nueva especialidad:', error);
-            return res.status(500).json({ error: 'Error al crear la especialidad.' });
+            console.error('Error al crear especialidad:', error);
+            return res.status(400).json({ error: (error as Error).message });
         }
-    }
+    }   
 
     /**
      * Maneja la petición PUT para actualizar una especialidad.
@@ -60,12 +60,12 @@ export class SpecialtiesController {
         try {
             const deleted = await specialtyService.delete(parseInt(id));
             if (!deleted) {
-                return res.status(404).json({ error: 'Especialidad no encontrada.' });
+                return res.status(404).json({ error: "Especialidad no encontrada." });
             }
             return res.status(204).send();
         } catch (error) {
-            console.error('Error al eliminar la especialidad:', error);
-            return res.status(500).json({ error: 'Error al eliminar la especialidad.' });
+            console.error("Error al eliminar especialidad:", error);
+            return res.status(400).json({ error: (error as Error).message });
         }
     }
 }

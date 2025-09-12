@@ -40,7 +40,7 @@ export class Appointment {
     @Column({ type: "int", nullable: true })
     service_id!: number;
 
-    @ManyToOne(() => Service, service => service.appointments)
+    @ManyToOne(() => Service, service => service.appointment)
     service!: Service;
 
     @Column({ type: "int", nullable: true })

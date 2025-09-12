@@ -45,8 +45,11 @@ export class ServicesController {
         const serviceData = req.body;
         try {
             const newService = await servicesService.create(serviceData);
-            if (!newService) {
+            if (newService === null) {
                 return res.status(400).json({ error: 'Especialidad no válida.' });
+            }
+            if (newService === "duplicate") {
+                return res.status(400).json({ error: 'Ya existe un servicio con ese nombre en esta especialidad.' });
             }
             return res.status(201).json(newService);
         } catch (error) {
@@ -79,16 +82,24 @@ export class ServicesController {
      * @return Respuesta vacía si se elimina o mensaje de error.
      */
     async deleteService(req: Request, res: Response): Promise<Response> {
-        const { id } = req.params;
         try {
-            const deleted = await servicesService.delete(parseInt(id));
-            if (!deleted) {
-                return res.status(404).json({ error: 'Servicio no encontrado.' });
+            const id = parseInt(req.params.id);
+            const deleted = await servicesService.delete(id);
+
+            if (deleted === "hasRelations") {
+                return res.status(400).json({
+                    error: "No se puede eliminar el servicio: tiene citas o especialistas asociados.",
+                });
             }
+
+            if (deleted === false) {
+                return res.status(404).json({ error: "Servicio no encontrado." });
+            }
+
             return res.status(204).send();
         } catch (error) {
             console.error('Error al eliminar el servicio:', error);
-            return res.status(500).json({ error: 'Error al eliminar el servicio.' });
+            return res.status(500).json({ error: "Error al eliminar el servicio." });
         }
     }
 }
