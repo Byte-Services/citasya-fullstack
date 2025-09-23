@@ -9,7 +9,6 @@ import { Appointment, AppointmentStatus } from '../modules/appointments/appointm
 import { Worker, WorkerStatus } from '../modules/workers/worker.model.js';
 import { Specialty } from '../modules/specialties/specialty.model.js';
 import { MoreThanOrEqual, Not, In } from 'typeorm';
-import { DateTime } from 'luxon';
 
 // ---------------- Google Calendar ----------------
 const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || './service_account_key.json';
@@ -69,6 +68,54 @@ function generateCandidateSlots(rangeStart: string, rangeEnd: string, serviceMin
   }
   return out;
 }
+
+// Normaliza una fecha dada en varios formatos a YYYY-MM-DD, asumiendo el año actual o el siguiente si ya pasó
+function normalizeDate(fecha: string): string {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    let year = currentYear;
+    let month: number;
+    let day: number;
+
+    // Si la fecha contiene '-', asumimos formato 'YYYY-MM-DD'
+    if (fecha.includes('-')) {
+        const parts = fecha.split('-');
+        if (parts.length === 3) {
+            year = parseInt(parts[0], 10);
+            month = parseInt(parts[1], 10);
+            day = parseInt(parts[2], 10);
+        } else {
+            // Manejar 'MM-DD' si el LLM lo envía así
+            month = parseInt(parts[0], 10);
+            day = parseInt(parts[1], 10);
+        }
+    } else if (fecha.includes('/')) {
+        // Si la fecha contiene '/', asumimos 'DD/MM'
+        const parts = fecha.split('/');
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+    } else {
+        // Si no, asumimos que es un día del mes actual
+        day = parseInt(fecha, 10);
+        month = today.getMonth() + 1;
+    }
+
+    // Crea un objeto de fecha con el año actual
+    let dateObj = new Date(currentYear, month - 1, day);
+
+    // Compara la fecha creada con la fecha actual.
+    // Si la fecha ya pasó en el año actual, usa el próximo año.
+    if (dateObj < today) {
+        dateObj.setFullYear(currentYear + 1);
+    }
+
+    // Formatea la fecha al formato YYYY-MM-DD
+    const formattedMonth = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const formattedDay = dateObj.getDate().toString().padStart(2, '0');
+
+    return `${dateObj.getFullYear()}-${formattedMonth}-${formattedDay}`;
+}
+
 
 // ---------------- Helpers de datos ----------------
 async function getServiceByName(name: string): Promise<Service | null> {
@@ -149,47 +196,44 @@ function computeWorkerFreeSlotsForDay(
 // Buscar cliente por teléfono
 export const findClientByPhoneTool = new DynamicStructuredTool({
   name: "find_client_by_phone",
-  description: "Busca un cliente por su número de teléfono.",
-  schema: z.object({ telefono: z.string().describe("Número de teléfono") }),
+  description: "Busca un cliente por su número de teléfono. Usa sender_phone.",
+  schema: z.object({ telefono: z.string().describe("Número de teléfono del cliente, siempre usar sender_phone") }),
   func: async ({ telefono }) => {
     const clientRepository = AppDataSource.getRepository(Client);
     const client = await clientRepository.findOne({ where: { phone: telefono } });
-    if (client) return `Cliente existente: ${client.name} (ID ${client.id}).`;
-    return "No se encontró cliente con este teléfono.";
+    if (client) {
+      return JSON.stringify({ encontrado: true, id: client.id, nombre: client.name, telefono: client.phone });
+    }
+    return JSON.stringify({ encontrado: false });
   }
 });
 
-// Crear cliente
+// Crear cliente nuevo
 export const createClientTool = new DynamicStructuredTool({
   name: "create_client",
-  description: "Crea un cliente nuevo.",
+  description: "Crea un cliente nuevo en la base de datos.",
   schema: z.object({
-    nombre_completo: z.string(),
-    cedula: z.string(),
-    fecha_nacimiento: z.string().describe("YYYY-MM-DD"),
-    telefono: z.string(),
+    nombre_completo: z.string().describe("Nombre completo del cliente"),
+    cedula: z.string().describe("Cédula o documento de identidad del cliente"),
+    telefono: z.string().describe("Número de teléfono del cliente, siempre usar sender_phone"),
   }),
-  func: async ({ nombre_completo, cedula, fecha_nacimiento, telefono }) => {
+  func: async ({ nombre_completo, cedula, telefono }) => {
     try {
       const repo = AppDataSource.getRepository(Client);
-      const newClient = repo.create({
-        name: nombre_completo,
-        documentId: cedula,
-        phone: telefono
-      });
+      const newClient = repo.create({ name: nombre_completo, documentId: cedula, phone: telefono });
       await repo.save(newClient);
-      return `Cliente creado con ID: ${newClient.id}.`;
+      return JSON.stringify({ creado: true, id: newClient.id, nombre: newClient.name });
     } catch (e) {
-      console.error(e);
-      return "Error al crear el cliente (posible documento duplicado).";
+      return JSON.stringify({ creado: false, error: "No se pudo crear el cliente (posible documento duplicado)." });
     }
   }
 });
 
+
 // Listar TODAS las especialidades — NUEVO
 export const listSpecialtiesTool = new DynamicStructuredTool({
   name: "list_specialties",
-  description: "Lista las categorías/especialidades de servicios disponibles.",
+  description: "Lista las categorías o especialidades de servicios disponibles.",
   schema: z.object({}),
   func: async () => {
     const repo = AppDataSource.getRepository(Specialty);
@@ -199,13 +243,11 @@ export const listSpecialtiesTool = new DynamicStructuredTool({
   }
 });
 
-// Listar servicios por especialidad — NUEVO
+// Listar servicios por especialidad
 export const listServicesBySpecialtyTool = new DynamicStructuredTool({
   name: "list_services_by_specialty",
-  description: "Lista servicios activos de una especialidad.",
-  schema: z.object({
-    especialidad: z.string().describe("Nombre de la especialidad, p.ej. 'Peluquería'")
-  }),
+  description: "Lista servicios activos de una especialidad (categoría).",
+  schema: z.object({ especialidad: z.string().describe("Nombre de la especialidad, p.ej. 'Peluquería'") }),
   func: async ({ especialidad }) => {
     const repo = AppDataSource.getRepository(Service);
     const services = await repo.find({
@@ -218,10 +260,10 @@ export const listServicesBySpecialtyTool = new DynamicStructuredTool({
   }
 });
 
-// Listar servicios activos
+// Listar todos los servicios activos
 export const listServicesTool = new DynamicStructuredTool({
   name: "list_services",
-  description: "Lista los servicios activos del spa.",
+  description: "Lista todos los servicios activos del spa.",
   schema: z.object({}),
   func: async () => {
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -238,7 +280,7 @@ export const listServicesTool = new DynamicStructuredTool({
 // Detalles de un servicio
 export const getServiceDetailsTool = new DynamicStructuredTool({
   name: "get_service_details",
-  description: "Obtiene descripción, precio y duración de un servicio.",
+  description: "Obtiene la descripción, precio y duración de un servicio específico.",
   schema: z.object({ servicio: z.string() }),
   func: async ({ servicio }) => {
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -248,302 +290,188 @@ export const getServiceDetailsTool = new DynamicStructuredTool({
   }
 });
 
-// Verifica horarios disponibles para un servicio en un rango de fechas
-export const checkServiceAvailabilityTool = new DynamicStructuredTool({
-  name: "check_service_availability",
-  description: "Verifica horarios disponibles para un servicio. Considera duración, horario laboral del trabajador y citas ya agendadas.",
-  schema: z.object({
-    serviceId: z.number().describe("ID del servicio"),
-    startDate: z.string().describe("Fecha inicial en formato YYYY-MM-DD"),
-    endDate: z.string().describe("Fecha final en formato YYYY-MM-DD"),
-    preferredWorker: z.string().optional().describe("Nombre del especialista preferido si el cliente lo pide"),
-  }),
-  func: async ({ serviceId, startDate, endDate, preferredWorker }) => {
-    const serviceRepo = AppDataSource.getRepository(Service);
-    const workerRepo = AppDataSource.getRepository(Worker);
-    const appointmentRepo = AppDataSource.getRepository(Appointment);
-
-    const service = await serviceRepo.findOne({ where: { id: serviceId } });
-    if (!service) return `No se encontró el servicio con ID ${serviceId}`;
-
-    // Buscar workers que prestan este servicio
-    let workersQuery = workerRepo
-      .createQueryBuilder("worker")
-      .leftJoinAndSelect("worker.services", "service")
-      .where("service.id = :serviceId", { serviceId })
-      .andWhere("worker.status = :status", { status: WorkerStatus.Activo });
-
-    if (preferredWorker) {
-      workersQuery = workersQuery.andWhere("worker.name ILIKE :name", {
-        name: `%${preferredWorker}%`,
-      });
-    }
-
-    const workers = await workersQuery.getMany();
-    if (!workers.length) {
-      return preferredWorker
-        ? `El especialista ${preferredWorker} no está disponible para este servicio.`
-        : "No hay especialistas disponibles para este servicio.";
-    }
-
-    const results: string[] = [];
-
-    for (const worker of workers) {
-      const schedule = worker.schedule?.days ?? {};
-      const breakTime = worker.schedule?.breakTime || "13:00";
-
-      const start = DateTime.fromISO(startDate, { zone: "America/Mexico_City" });
-      const end = DateTime.fromISO(endDate, { zone: "America/Mexico_City" });
-
-      let workerSlots: string[] = [];
-
-      for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-        const weekday = day.toFormat("ccc") as keyof typeof schedule; // Mon, Tue, ...
-        const daySchedule = schedule[weekday];
-        if (!daySchedule?.enabled) continue;
-
-        const startTime = DateTime.fromISO(`${day.toISODate()}T${daySchedule.startTime}`, {
-          zone: "America/Mexico_City",
-        });
-        const endTime = DateTime.fromISO(`${day.toISODate()}T${daySchedule.endTime}`, {
-          zone: "America/Mexico_City",
-        });
-
-        // Citas ya agendadas para ese día
-        const appointments = await appointmentRepo.find({
-          where: {
-            worker: { id: worker.id },
-            date: day.toJSDate(),
-            status: AppointmentStatus.Pendiente,
-          },
-          order: { hour: "ASC" },
-        });
-
-        let current = startTime;
-        for (const appt of appointments) {
-          const apptStart = DateTime.fromFormat(
-            `${appt.date} ${appt.hour}`,
-            "yyyy-MM-dd HH:mm",
-            { zone: "America/Mexico_City" }
-          );
-          const apptEnd = apptStart.plus({ minutes: appt.service?.minutes_duration });
-
-          // Ver si hay hueco antes de la cita
-          if (apptStart.diff(current, "minutes").minutes >= service.minutes_duration) {
-            workerSlots.push(`${current.toFormat("yyyy-MM-dd HH:mm")}`);
-          }
-
-          current = apptEnd;
-        }
-
-        // Ver si queda espacio al final del día
-        if (endTime.diff(current, "minutes").minutes >= service.minutes_duration) {
-          workerSlots.push(`${current.toFormat("yyyy-MM-dd HH:mm")}`);
-        }
-      }
-
-      if (workerSlots.length) {
-        results.push(
-          `Disponibilidad de ${worker.name}:\n${workerSlots
-            .slice(0, 5)
-            .join("\n")}${workerSlots.length > 5 ? "\n...más opciones disponibles" : ""}`
-        );
-      } else {
-        results.push(`El especialista ${worker.name} no tiene huecos en las fechas solicitadas.`);
-      }
-    }
-
-    return results.join("\n\n");
-  },
-});
-
-
-// Sugerir SLOTS disponibles por servicio (elige automáticamente un trabajador que lo haga) — NUEVO
+// Obtener horarios disponibles para un servicio y una fecha
 export const getAvailableSlotsTool = new DynamicStructuredTool({
   name: "get_available_slots",
-  description: "Devuelve opciones de horarios disponibles para un servicio en una fecha dada, considerando la duración, el horario del centro y la agenda de los especialistas.",
+  description: "Devuelve opciones de horarios disponibles para un servicio en una fecha dada (YYYY-MM-DD), considerando el horario del centro y las agendas de los especialistas.",
   schema: z.object({
-    servicio: z.string(),
-    fecha: z.string().describe("YYYY-MM-DD"),
-    max_opciones: z.number().default(5)
+    servicio: z.string().describe("Nombre del servicio"),
+    fecha: z.string().describe("Fecha para la búsqueda en formato YYYY-MM-DD"),
   }),
-  func: async ({ servicio, fecha, max_opciones }) => {
+  func: async ({ servicio, fecha }) => {
+    const normalizedDate = normalizeDate(fecha);
     const service = await getServiceByName(servicio);
     if (!service || service.status !== ServiceStatus.Activo) return `El servicio '${servicio}' no está disponible.`;
     const duration = service.minutes_duration ?? 60;
-
+    
     const workers = await getWorkersForService(service.id);
     if (!workers.length) return `No hay especialistas activos para '${servicio}'.`;
-
-    const day = new Date(fecha);
+    
+    const day = new Date(normalizedDate);
     day.setHours(0,0,0,0);
-
+    
     const workerIds = workers.map(w => w.id);
     const dayAppointments = await getAppointmentsForWorkersOnDate(workerIds, day);
-
-    // Agrupamos citas por worker
+    
     const mapApps = new Map<number, Appointment[]>();
     for (const w of workers) mapApps.set(w.id, []);
     for (const a of dayAppointments) {
       const list = mapApps.get(a.worker_id!)!;
       list.push(a);
     }
-
-    // Calculamos slots por worker y juntamos
+    
     type Suggestion = { worker_id: number; worker_name: string; start: string; end: string };
     const suggestions: Suggestion[] = [];
+    const maxSlots = 10;
+    
     for (const w of workers) {
       const free = computeWorkerFreeSlotsForDay(
         duration, day, (w as any).schedule ?? null,
         mapApps.get(w.id) || [],
-        max_opciones
+        maxSlots
       );
       for (const slot of free) {
         suggestions.push({ worker_id: w.id, worker_name: w.name, start: slot.start, end: slot.end });
       }
     }
-
-    // Ordenamos por hora de inicio
+    
     suggestions.sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
-
-    if (!suggestions.length) return `No hay disponibilidad el ${fecha} para '${servicio}'.`;
-
-    // Devolvemos como lista legible
-    const top = suggestions.slice(0, max_opciones);
-    const lines = top.map((s, i) => `${i+1}. ${fecha} ${s.start}-${s.end} con ${s.worker_name} (Worker ID: ${s.worker_id})`);
+    
+    if (!suggestions.length) return `No hay disponibilidad para '${servicio}' el ${normalizedDate}.`;
+    
+    const top = suggestions.slice(0, 5); // Mostrar solo las 5 mejores opciones
+    const lines = top.map((s, i) => `${i+1}. ${normalizedDate} ${s.start}-${s.end} con ${s.worker_name} (ID especialista: ${s.worker_id})`);
     return `Opciones disponibles para '${servicio}':\n` + lines.join('\n');
   }
 });
 
-// Reservar cita (con hora fin y calendar_event_id) — actualizado
+// Reservar cita
 export const bookAppointmentTool = new DynamicStructuredTool({
-  name: "book_appointment",
-  description: "Reserva una cita. Requiere cliente_id, servicio, fecha (YYYY-MM-DD), hora (HH:MM) y opcional worker_id. Calcula hora fin según duración del servicio.",
-  schema: z.object({
-    cliente_id: z.number(),
-    servicio: z.string(),
-    fecha: z.string().describe("YYYY-MM-DD"),
-    hora: z.string().describe("HH:MM"),
-    worker_id: z.number().optional()
-  }),
-  func: async ({ cliente_id, servicio, fecha, hora, worker_id }) => {
-    const queryRunner = AppDataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  name: "book_appointment",
+  description: "Reserva una cita. Requiere cliente_id, servicio, fecha (YYYY-MM-DD), hora (HH:MM) y worker_id.",
+  schema: z.object({
+    cliente_id: z.number().describe("ID del cliente"),
+    servicio: z.string().describe("Nombre del servicio"),
+    fecha: z.string().describe("Fecha de la cita en formato YYYY-MM-DD"),
+    hora: z.string().describe("Hora de inicio de la cita en formato HH:MM"),
+    worker_id: z.number().optional().describe("ID del especialista, si el cliente lo especificó o si lo proporcionó una herramienta de disponibilidad"),
+  }),
+  func: async ({ cliente_id, servicio, fecha, hora, worker_id }) => {
+    const normalized = normalizeDate(fecha);
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    try {
-      const serviceRepo = AppDataSource.getRepository(Service);
-      const clientRepo = AppDataSource.getRepository(Client);
-      const apptRepo = AppDataSource.getRepository(Appointment);
-      const workerRepo = AppDataSource.getRepository(Worker);
+    try {
+      const serviceRepo = AppDataSource.getRepository(Service);
+      const clientRepo = AppDataSource.getRepository(Client);
+      const apptRepo = AppDataSource.getRepository(Appointment);
+      const workerRepo = AppDataSource.getRepository(Worker);
 
-      const service = await serviceRepo.findOne({ where: { name: servicio } });
-      if (!service || service.status !== ServiceStatus.Activo) return `El servicio '${servicio}' no existe o no está activo.`;
-      const client = await clientRepo.findOneBy({ id: cliente_id });
-      if (!client) return "No se encontró el cliente.";
+      const service = await serviceRepo.findOne({ where: { name: servicio } });
+      if (!service || service.status !== ServiceStatus.Activo) return `El servicio '${servicio}' no existe o no está activo.`;
+      const client = await clientRepo.findOneBy({ id: cliente_id });
+      if (!client) return "No se encontró el cliente.";
 
-      // Elegimos un worker válido si no vino
-      let worker: Worker | null = null;
-      if (worker_id) {
-        worker = await workerRepo.findOneBy({ id: worker_id });
-        if (!worker || worker.status !== WorkerStatus.Activo) return "El especialista indicado no está disponible.";
-      } else {
-        // uno cualquiera que preste el servicio
-        const ws = await getWorkersForService(service.id);
-        if (!ws.length) return "No hay especialistas activos para este servicio.";
-        worker = ws[0];
-      }
+      let worker: Worker | null = null;
+      if (worker_id) {
+        worker = await workerRepo.findOneBy({ id: worker_id });
+      } else {
+        const ws = await getWorkersForService(service.id);
+        if (!ws.length) return "No hay especialistas activos para este servicio.";
+        worker = ws[0];
+      }
 
-      const duration = service.minutes_duration ?? 60;
-      const end = addMinutes(hora, duration);
+      if (!worker || worker.status !== WorkerStatus.Activo) return "El especialista indicado no está disponible.";
 
-      // Validar conflictos del worker
-      const day = new Date(fecha);
-      day.setHours(0,0,0,0);
-      const sameDay = await apptRepo.find({
-        where: {
-          worker_id: worker.id,
-          date: day,
-          status: Not(AppointmentStatus.Cancelado)
-        }
-      });
-      const conflict = sameDay.some(a => rangesOverlap(hora, end, a.hour, a.end_time ?? addMinutes(a.hour, duration)));
-      if (conflict) return "El especialista no tiene ese horario disponible. Elige otra hora.";
+      const duration = service.minutes_duration ?? 60;
+      const end = addMinutes(hora, duration);
 
-      // Crear cita
-      const newAppt = apptRepo.create({
-        client,
-        service,
-        worker,
-        date: day,
-        hour: hora,
-        end_time: end,
-        status: AppointmentStatus.Pendiente
-      });
-      await queryRunner.manager.save(newAppt);
+      // Crea una cadena de fecha y hora que JavaScript interpretará correctamente en UTC
+      const TZ_OFFSET_CARACAS = '-04:00';
+      const startDateTime = new Date(`${normalized}T${hora}:00${TZ_OFFSET_CARACAS}`);
+      const endDateTime = new Date(`${normalized}T${end}:00${TZ_OFFSET_CARACAS}`);
 
-      // Google Calendar
-      const startDateTime = new Date(`${fecha}T${hora}:00`);
-      const endDateTime = new Date(`${fecha}T${end}:00`);
-      const event = {
-        summary: `Cita: ${service.name} - ${client.name}`,
-        description: `Servicio: ${service.name}\nCliente: ${client.name}\nTeléfono: ${client.phone}\nEspecialista: ${worker.name}\nReservado via WhatsApp Bot.`,
-        start: { dateTime: startDateTime.toISOString(), timeZone: 'America/Caracas' },
-        end: { dateTime: endDateTime.toISOString(), timeZone: 'America/Caracas' },
-      };
-      const calRes = await calendar.events.insert({ calendarId: CALENDAR_ID, requestBody: event });
-      const eventId = calRes.data.id || null;
+      const conflict = await apptRepo.findOne({
+        where: {
+          worker_id: worker.id,
+          date: startDateTime, // Ahora `startDateTime` ya es una fecha UTC correcta
+          status: Not(AppointmentStatus.Cancelado),
+          hour: hora,
+        }
+      });
+      if (conflict) return "El especialista no tiene ese horario disponible. Elige otra hora.";
 
-      if (eventId) {
-        newAppt.calendar_event_id = eventId;
-        await queryRunner.manager.save(newAppt);
-      }
+      const newAppt = apptRepo.create({
+        client, service, worker, date: startDateTime, hour: hora, end_time: end, status: AppointmentStatus.Pendiente
+      });
+      await queryRunner.manager.save(newAppt);
 
-      await queryRunner.commitTransaction();
+      // Google Calendar
+      const event = {
+        summary: `Cita: ${service.name} - ${client.name}`,
+        description: `Servicio: ${service.name}\nCliente: ${client.name}\nTeléfono: ${client.phone}\nEspecialista: ${worker.name}\nReservado via WhatsApp Bot.`,
+        start: { dateTime: startDateTime.toISOString(), timeZone: 'America/Caracas' },
+        end: { dateTime: endDateTime.toISOString(), timeZone: 'America/Caracas' },
+      };
+      const calRes = await calendar.events.insert({ calendarId: CALENDAR_ID, requestBody: event });
+      const eventId = calRes.data.id || null;
 
-      return `✅ Cita agendada para ${client.name}:\n• Servicio: ${service.name}\n• Especialista: ${worker.name}\n• Fecha: ${fecha}\n• Hora: ${hora}-${end}\n• Precio: ${service.price} USD\nID cita: ${newAppt.id}`;
-    } catch (err: any) {
-      await queryRunner.rollbackTransaction();
-      console.error("Error al reservar:", err);
-      return `Error al reservar la cita: ${err.message}`;
-    } finally {
-      await queryRunner.release();
-    }
-  }
+      if (eventId) {
+        newAppt.calendar_event_id = eventId;
+        await queryRunner.manager.save(newAppt);
+      }
+
+      await queryRunner.commitTransaction();
+
+      return `✅ Cita agendada para ${client.name}:\n• Servicio: ${service.name}\n• Especialista: ${worker.name}\n• Fecha: ${normalized}\n• Hora: ${hora}-${end}\n• Precio: ${service.price} USD\nID cita: ${newAppt.id}`;
+    } catch (err: any) {
+      await queryRunner.rollbackTransaction();
+      console.error("Error al reservar:", err);
+      return `Error al reservar la cita: ${err.message}`;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 });
 
 // Listar próximas citas del cliente
 export const listUserAppointmentsTool = new DynamicStructuredTool({
-  name: "list_user_appointments",
-  description: "Lista citas futuras de un cliente por teléfono.",
-  schema: z.object({ telefono: z.string() }),
-  func: async ({ telefono }) => {
-    const clientRepository = AppDataSource.getRepository(Client);
-    const client = await clientRepository.findOne({ where: { phone: telefono } });
-    if (!client) return "No se encontró un cliente con este teléfono.";
+  name: "list_user_appointments",
+  description: "Lista citas futuras de un cliente por teléfono.",
+  schema: z.object({ telefono: z.string() }),
+  func: async ({ telefono }) => {
+    const clientRepository = AppDataSource.getRepository(Client);
+    const client = await clientRepository.findOne({ where: { phone: telefono } });
+    if (!client) return "No se encontró un cliente con este teléfono.";
 
-    const appointmentRepository = AppDataSource.getRepository(Appointment);
-    const today = new Date(); today.setHours(0,0,0,0);
+    const appointmentRepository = AppDataSource.getRepository(Appointment);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const appointments = await appointmentRepository.find({
-      where: {
-        client: { id: client.id },
-        date: MoreThanOrEqual(today),
-        status: AppointmentStatus.Pendiente
-      },
-      relations: ["service", "worker"],
-      order: { date: "ASC", hour: "ASC" }
-    });
+    const appointments = await appointmentRepository.find({
+      where: {
+        client: { id: client.id },
+        date: MoreThanOrEqual(today),
+        status: AppointmentStatus.Pendiente
+      },
+      relations: ["service", "worker"],
+      order: { date: "ASC", hour: "ASC" }
+    });
 
-    if (!appointments.length) return "No tienes citas próximas agendadas.";
+    if (!appointments.length) return "No tienes citas próximas agendadas.";
 
-    const list = appointments.map(a => {
-      const d = a.date.toISOString().split('T')[0];
-      const w = a.worker?.name ? ` con ${a.worker.name}` : '';
-      return `- #${a.id}: ${a.service.name}${w} el ${d} ${a.hour}-${a.end_time ?? ''}`;
-    }).join('\n');
-    return `Tus próximas citas:\n${list}`;
-  }
+    const list = appointments.map(a => {
+
+      const appointmentDate = a.date instanceof Date ? a.date : new Date(a.date);
+
+      const d = appointmentDate.toISOString().split('T')[0];
+
+      const w = a.worker?.name ? ` con ${a.worker.name}` : '';
+      return `- #${a.id}: ${a.service.name}${w} el ${d} ${a.hour}-${a.end_time ?? ''}`;
+    }).join('\n');
+    return `Tus próximas citas:\n${list}`;
+  }
 });
 
 // Cancelar una cita (también borra el evento de Calendar si existe)

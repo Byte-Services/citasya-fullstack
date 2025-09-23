@@ -1,89 +1,113 @@
-import { initializeAgentExecutorWithOptions } from 'langchain/agents';
+// agent/agent.ts
+import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { ChatOpenAI } from "@langchain/openai";
+import { DynamicStructuredTool } from "langchain/tools";
 import {
-    bookAppointmentTool,
-    listServicesTool,
-    checkServiceAvailabilityTool,
-    listUserAppointmentsTool,
-    cancelAppointmentTool,
-    getServiceDetailsTool,
-    findClientByPhoneTool, 
-    createClientTool,
+  bookAppointmentTool,
+  listServicesTool,
+  listUserAppointmentsTool,
+  cancelAppointmentTool,
+  getServiceDetailsTool,
+  findClientByPhoneTool,
+  createClientTool,
+  listSpecialtiesTool,
+  listServicesBySpecialtyTool,
+  getAvailableSlotsTool,
+} from "./tools.js";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
+
+const SYSTEM_PROMPT = `
+# Rol y Personalidad
+Eres 'Luna', asistente virtual de Spa Caracas. Tu tono es amable, profesional y servicial. Respondes siempre en español.
+
+# Objetivo Principal
+Tu misión es ayudar a los clientes a conocer nuestros servicios, precios, y a agendar, consultar o cancelar sus citas.
+
+# Reglas de Operación
+- **Uso del Teléfono:** El número de teléfono del cliente (sender_phone) es tu identificador clave. **Nunca pidas el número de teléfono** al cliente, ya lo tienes. Utiliza la herramienta 'find_client_by_phone' al inicio de cada conversación para verificar si el cliente ya existe en nuestra base de datos.
+- **Flujo de Identificación:**
+  - 1. Al iniciar la conversación, usa la herramienta **'find_client_by_phone'**.
+  - 2. Si la herramienta indica que el cliente **no fue encontrado**, debes pedirle al cliente su nombre completo y cédula para poder registrarlo. Luego, utiliza la herramienta **'create_client'** con el nombre, cédula y el 'sender_phone' capturado.
+- **Flujo de Reserva de Citas:**
+  - 1. Si el cliente pregunta por servicios en general, usa **'list_services'** o **'list_specialties'**.
+  - 2. Si el cliente pregunta por un servicio específico, usa **'get_service_details'**.
+  - 3. Cuando el cliente menciona un servicio y una fecha, usa la herramienta **'get_available_slots'** para sugerirle horarios disponibles.
+  - 4. Una vez que el cliente elija un horario, utiliza la herramienta **'book_appointment'**.
+  - 5. Al confirmar la cita, presenta un resumen completo: servicio, fecha, hora, especialista, precio y el ID de la cita.
+- **Flujo de Cancelación:**
+  - 1. Cuando el cliente quiera cancelar, primero usa **'list_user_appointments'** para mostrarle sus citas.
+  - 2. Luego, pide el ID de la cita que desea cancelar y usa **'cancel_appointment'**.
+- **Disponibilidad:** El horario de atención del centro es:
+  - Lunes a Viernes: 08:00 a 18:00
+  - Sábados y Domingos: 09:00 a 16:00
+  - Ten esto en cuenta al sugerir horarios.
+- **Información Adicional:** Utiliza la información proporcionada por las herramientas para dar respuestas claras y precisas. Si una herramienta falla o devuelve un error, informa al cliente de manera educada y sugiere una alternativa.
+
+# Historial de Conversación
+{chat_history}
+`;
+
+// La lógica para envolver las herramientas se mantiene
+function wrapToolWithPhone(tool: DynamicStructuredTool, senderPhone: string): DynamicStructuredTool {
+  return new DynamicStructuredTool({
+    name: tool.name,
+    description: tool.description,
+    schema: tool.schema,
+    func: async (args: any) => {
+      // Inyecta el teléfono si el esquema de la herramienta lo requiere
+      if (['find_client_by_phone', 'create_client', 'list_user_appointments'].includes(tool.name)) {
+        args.telefono = senderPhone;
+      }
+      return tool.func(args);
+    },
+  });
+}
+
+export async function createSpaAgent() {
+  const model = new ChatOpenAI({
+    temperature: 0,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: "gpt-3.5-turbo-0125",
+    verbose: true,
+  });
+
+  const tools = [
     listSpecialtiesTool,
     listServicesBySpecialtyTool,
-    getAvailableSlotsTool,       
-} from './tools.js';
-import { BufferMemory } from "langchain/memory";
-import { ChatMessageHistory } from "langchain/stores/message/in_memory";
-import { BaseMessage } from "@langchain/core/messages";
-
-
-export async function createSpaAgent(chatHistory?: BaseMessage[]) {    
-    const model = new ChatOpenAI({
-        temperature: 0,
-        openAIApiKey: process.env.OPENAI_API_KEY,
-        modelName: "gpt-3.5-turbo"
-    });
-
-    // Array de herramientas disponibles para el agente
-    const tools = [
-    listSpecialtiesTool,
-    listServicesBySpecialtyTool,
     listServicesTool,
     getServiceDetailsTool,
-    getAvailableSlotsTool,          
-    checkServiceAvailabilityTool,
+    getAvailableSlotsTool,
     bookAppointmentTool,
     listUserAppointmentsTool,
     cancelAppointmentTool,
     findClientByPhoneTool,
     createClientTool,
-    ];
+  ];
 
-    // Si hay historial, se carga en memoria
-    const memory = new BufferMemory({
-        chatHistory: new ChatMessageHistory(chatHistory || []),
-        returnMessages: true,
-        memoryKey: "chat_history"
-    });
+  const executor = await initializeAgentExecutorWithOptions(
+    tools,
+    model,
+    {
+      agentType: "openai-functions",
+      verbose: true,
+      callbacks: [new ConsoleCallbackHandler()],
+    }
+  );
 
-    // agent/agent.ts (fragmento relevante dentro de createSpaAgent)
-    return await initializeAgentExecutorWithOptions(tools, model, {
-        agentType: "openai-functions",
-        verbose: true,
-        agentArgs: {
-            prefix: `Eres 'Luna', asistente virtual de Spa Caracas. Respondes en español.
-        Tu objetivo: ayudar a clientes a conocer servicios, precios y agendar/cancelar/consultar citas.
+  return {
+    async invoke(input: { input: string; chat_history: any[]; sender_phone: string }) {
+      const wrappedTools = tools.map(tool => wrapToolWithPhone(tool, input.sender_phone));
+      executor.tools = wrappedTools; // Asigna las herramientas envueltas
+      
+      const finalHistory = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...(input.chat_history || []),
+      ];
 
-        Reglas operativas IMPORTANTES:
-        - Horario del centro (America/Caracas):
-        • L-V: 08:00-18:00
-        • S-D: 09:00-16:00
-        - Siempre respeta ese horario al ofrecer opciones.
-        - La disponibilidad se basa en: duración del servicio, citas existentes del especialista y horario del centro.
-        - Cuando el cliente quiera agendar: sugiere hasta 5 opciones usando "check_service_availability".
-        - Al reservar, calcula hora fin según la duración del servicio. Usa "book_appointment" con worker_id cuando el cliente elija una opción.
-
-        Flujo de conversación:
-        1) Si el cliente habla de categorías (ej. "Manicure", "Peluquería"), usa "list_services_by_specialty".
-        Si no conoce categorías, usa "list_specialties" y luego "list_services_by_specialty".
-        2) Si menciona un servicio específico: usa "get_service_details" y PREGUNTA fecha (YYYY-MM-DD).
-        3) Cuando tenga servicio + fecha: usa "check_service_availability" para sugerir 3-5 opciones con hora y especialista.
-        4) El cliente elige una opción (incluye Worker ID y hora). Verifica con "check_service_availability" si quieres confirmar.
-        5) Identifica cliente con "find_client_by_phone". Si no existe, pide nombre completo, cédula y fecha de nacimiento y crea con "create_client".
-        6) Reserva usando "book_appointment" (incluye worker_id si el cliente eligió una opción con especialista).
-        7) Confirma con un resumen: servicio, especialista, fecha, hora inicio-fin, precio.
-
-        Cancelar cita:
-        - Si el cliente pide cancelar, primero usa "list_user_appointments" (por su teléfono), pide el ID a cancelar y luego usa "cancel_appointment".
-
-        Consultas de precios/detalles:
-        - Usa "get_service_details".
-
-        Tono: claro, amable y profesional.
-        `
-        },
-        memory
-    });
-
+      return executor.invoke({
+        input: input.input,
+        chat_history: finalHistory,
+      });
+    },
+  };
 }

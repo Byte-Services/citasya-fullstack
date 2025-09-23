@@ -12,9 +12,6 @@ export class Specialty {
 
     @Column({ type: "varchar" })
     name!: string;
-    
-    @Column({ type: "text", nullable: true })
-    description!: string;
 
     @OneToMany(() => Service, (service: Service) => service.specialty)
     services!: Service[];

@@ -32,8 +32,11 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@langchain/community": "^0.3.56",
+    "@langchain/core": "^0.3.76",
     "@langchain/openai": "^0.6.3",
     "cors": "^2.8.5",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "googleapis": "^154.1.0",

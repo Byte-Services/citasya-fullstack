@@ -14,7 +14,7 @@ export class AgentMessage {
     message!: string;
 
     @Column({ type: "varchar" })
-    role!: string; // puede ser: "agent", "client"
+    role!: string; 
 
     @CreateDateColumn({ type: "timestamp with time zone" })
     createdAt!: Date;
