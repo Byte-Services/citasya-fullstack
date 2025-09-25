@@ -2,13 +2,20 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { VscAccount } from "react-icons/vsc";
+import { useUser } from '../context/UserContext'; 
 
 // Todos los textos usan la fuente Poppins
 export const Header: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useUser();
 
+  const handleLogout = () => {
+    logout(); 
+    router.push("/"); 
+  };
   // Array de links para la navegación
   const navLinks = [
     { name: 'CITAS', href: '/appointments' },
@@ -53,9 +60,20 @@ export const Header: React.FC = () => {
               </Link>
             );
           })}
-          <Link href="/profile" className="flex shrink-0 justify-center items-center w-9 h-9 ml-2">
-            <VscAccount className="size-9 hover:text-primary/20 transition-colors duration-200 rounded-2xl " style={{  background: pathname === '/profile' ? '#D6EBF3' : undefined, color: "#447F98" }} />
-          </Link>
+
+          {pathname === "/profile" ? (
+            <button
+              onClick={handleLogout}
+              className="w-full py-2 px-4 bg-[#447F98] text-white text-xs rounded-lg hover:bg-[#629BB5] transition-colors ml-2"
+              style={{ fontFamily: 'Poppins, sans-serif' }}
+            >
+              Cerrar sesión
+            </button>
+          ) : (          
+            <Link href="/profile" className="flex shrink-0 justify-center items-center w-9 h-9 ml-2">
+              <VscAccount className="size-9 hover:text-primary/20 transition-colors duration-200 rounded-2xl " style={{  background: pathname === '/profile' ? '#D6EBF3' : undefined, color: "#447F98" }} />
+            </Link>
+          )}
         </nav>
       </div>
     </header>

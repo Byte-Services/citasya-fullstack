@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Poppins, Roboto_Condensed } from "next/font/google";
 import "./globals.css";
-import { Header } from "../components/Header";
 import { Toaster } from "react-hot-toast";
+import { UserProvider } from "../context/UserContext";
+import { HeaderWrapper } from "../components/HeaderWrapper"; // 👈 importamos el wrapper
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -29,10 +30,10 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${poppins.variable} ${roboto_condensed.variable}`}>
       <body>
-        <Header />
-        <div>
-          {children}
-        </div>
+        <UserProvider>
+          <HeaderWrapper /> 
+          <div>{children}</div>
+        </UserProvider>
         <Toaster position="top-center" reverseOrder={false} />
       </body>
     </html>

@@ -13,7 +13,7 @@ import specialtyRoutes from './modules/specialties/specialty.routes.js';
 import serviceRoutes from './modules/services/service.routes.js';
 import appointmentRoutes from './modules/appointments/appointment.routes.js';
 import clientRoutes from './modules/clients/client.routes.js';
-//import userRoutes from './modules/users/user.routes.js';
+import userRoutes from './modules/users/user.routes.js';
 import workerRoutes from './modules/workers/worker.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 
@@ -47,7 +47,7 @@ AppDataSource.initialize()
         app.use('/admin/appointments', appointmentRoutes);
         app.use('/admin/clients', clientRoutes);
         app.use('/admin/workers', workerRoutes);
-        //app.use('/admin/users', userRoutes);
+        app.use('/admin/users', userRoutes);
         app.use('/admin/dashboard', dashboardRoutes);
         
         app.listen(PORT, () => {
