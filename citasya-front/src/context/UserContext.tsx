@@ -1,11 +1,13 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "../types/user"; 
+import { User } from "../types/user";
+import { NextRouter } from 'next/router'; 
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'; 
 
 type UserContextType = {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, router: AppRouterInstance | NextRouter) => Promise<void>;
   logout: () => void;
   updateUser: (newUser: User) => void;
 };
@@ -17,7 +19,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Cargar de localStorage si existe
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
     if (savedToken && savedUser) {
@@ -26,7 +27,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, router: AppRouterInstance | NextRouter) => {
     const res = await fetch("http://localhost:3000/admin/users/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,12 +42,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setToken(data.token);
-    setUser(data.user);
+    setUser(data.user); 
 
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
     console.log("🔑 Token recibido en frontend:", data.token);
+
+    // Redirección condicional ahora que 'data.user' es seguro
+    if (data.user.role === "Coordinator") {
+      router.push("/appointments");
+    } else if (data.user.role === "Admin") {
+      router.push("/");
+    }
   };
 
   const logout = () => {

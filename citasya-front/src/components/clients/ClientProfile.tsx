@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { VscEdit } from "react-icons/vsc";
 import { EditarCliente } from "./EditClient";
 import { EliminarCliente } from "./DeleteClient";
+import { useUser } from "../../context/UserContext";
+import { VscChevronLeft, VscChevronRight } from "react-icons/vsc"; 
 
 interface FullClientData {
   id: number;
@@ -24,20 +26,21 @@ interface FullClientData {
 
 
 interface ClientProfileProps {
-  clientId: number; 
+  clientId: number;
   onCloseProfile: () => void;
 }
 
 export default function ClientProfile({ clientId, onCloseProfile }: ClientProfileProps) {
+  const { user } = useUser();
   const [fullClientData, setFullClientData] = useState<FullClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  /**
-   * Carga los datos completos del cliente desde la API.
-   */
+  const [currentPage, setCurrentPage] = useState(1);
+  const appointmentsPerPage = 5;
+
   const fetchClientProfile = React.useCallback(async () => {
     if (!clientId) return;
 
@@ -65,11 +68,8 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
 
   useEffect(() => {
     fetchClientProfile();
-  }, [clientId, fetchClientProfile]); 
+  }, [clientId, fetchClientProfile]);
 
-  /**
-   * Maneja la eliminación de un cliente.
-   */
   const handleDeleteClient = async () => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients/${clientId}`, {
       method: "DELETE",
@@ -77,12 +77,11 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      // devolvemos el mensaje como un Error, pero no lo logeamos aquí
       return Promise.reject(new Error(errorData.message || "No se pudo eliminar el cliente."));
     }
 
     setShowDeleteModal(false);
-    onCloseProfile(); 
+    onCloseProfile();
   };
 
 
@@ -117,38 +116,43 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
     notes: fullClientData.notes,
   };
 
-  // Total invertido solo con citas concluidas
   const totalInvertido = fullClientData.appointments
     .filter(appt => appt.status === "Concluida")
-    .reduce((sum, appt) => sum +  parseFloat(appt.service?.price ?? 0), 0);
+    .reduce((sum, appt) => sum + parseFloat(appt.service?.price ?? 0), 0);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    // Ajuste para evitar desfase de día
     const day = date.getUTCDate().toString().padStart(2, "0");
-    const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // 0-index
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
     const year = date.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
 
-  // Historial: últimas 5 citas concluidas, más recientes primero
-  const recentAppointments = fullClientData.appointments
-    .filter(appt => appt.status === "Concluida") // solo concluidas
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5)
-    .map(appt => ({
-      servicio: appt.service?.name || "Servicio desconocido",
-      fecha: formatDate(appt.date),
-  }));
-
-
   const formatPhone = (phone: string) => {
     if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
+    const area = phone.slice(2, 5);
+    const number = phone.slice(5);
+    return `0${area}-${number}`;
+  };
+  
+  const allAppointments = fullClientData.appointments
+    .filter(appt => appt.status === "Concluida")
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  const totalPages = Math.ceil(allAppointments.length / appointmentsPerPage);
+  const startIndex = (currentPage - 1) * appointmentsPerPage;
+  const paginatedAppointments = allAppointments.slice(startIndex, startIndex + appointmentsPerPage);
 
-    const area = phone.slice(2, 5);       // "414"
-    const number = phone.slice(5);        // "3252123"
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
-    return `0${area}-${number}`;          // "0414-3252123"
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   return (
@@ -194,10 +198,6 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
           </div>
         </div>
 
-        <button className="flex justify-center items-center self-center px-10 py-3 mt-4 text-sm font-medium text-center text-white rounded-lg bg-[#447F98] shadow-md w-full max-w-[141px] hover:bg-[#629BB5] transition-colors">
-          <span>Chat</span>
-        </button>
-
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
           Historial de Citas
         </h3>
@@ -206,14 +206,14 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
           <table className="min-w-full shadow-sm rounded-lg table-fixed">
             <thead className="bg-neutral-100 border-b border-gray-200">
               <tr>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="w-2/3 px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider"
                 >
                   Servicio
                 </th>
-                <th 
-                  scope="col" 
+                <th
+                  scope="col"
                   className="w-1/3 px-6 py-3 text-center text-xs font-medium text-neutral-600 uppercase tracking-wider"
                 >
                   Fecha
@@ -221,16 +221,16 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
               </tr>
             </thead>
             <tbody className="bg-white max-h-60">
-              {recentAppointments.length > 0 ? (
-                recentAppointments.map((entry, index) => (
+              {paginatedAppointments.length > 0 ? (
+                paginatedAppointments.map((entry, index) => (
                   <tr key={index} className="border-b border-gray-200">
-                    <td 
+                    <td
                       className="px-6 py-4 text-xs text-neutral-600 break-words text-center"
                     >
-                      {entry.servicio}
+                      {entry.service?.name || "Servicio desconocido"}
                     </td>
                     <td className="px-6 py-4 text-xs text-neutral-600 text-center">
-                      {entry.fecha}
+                      {formatDate(entry.date)}
                     </td>
                   </tr>
                 ))
@@ -243,15 +243,42 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
               )}
             </tbody>
           </table>
+          
+          {/* Controles de paginación con flechas */}
+          {allAppointments.length > appointmentsPerPage && (
+            <div className="flex justify-center items-center mt-4 space-x-2">
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className={`flex items-center justify-center w-8 h-8 rounded-full shadow-md text-xs
+                  ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`
+                }
+              >
+                <VscChevronLeft />
+              </button>
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className={`flex items-center justify-center w-8 h-8 rounded-full shadow-md text-xs
+                  ${currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`
+                }
+              >
+                <VscChevronRight />
+              </button>
+            </div>
+          )}
         </div>
 
-
+        {user?.role === 'Admin' ? (
+        <>
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
-          Total Invertido
+            Total Invertido
         </h3>
         <div className="self-center text-2xl font-bold text-center leading-[66px] text-[#629BB5]">
-          {totalInvertido.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+            {totalInvertido.toLocaleString("en-US", { style: "currency", currency: "USD" })}
         </div>
+        </>
+        ) : null }
 
         <button onClick={() => setShowDeleteModal(true)} className="flex justify-center items-center self-center px-10 py-3 mt-6 text-sm font-medium text-center rounded-lg bg-[#FEE2E2] text-[#B91C1C] shadow-md w-full max-w-[141px] hover:bg-[#FFC1C1] transition-colors">
           <span>Eliminar Cliente</span>
@@ -259,7 +286,7 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
       </aside>
 
       {showEditModal && (
-        <EditarCliente 
+        <EditarCliente
           onClose={() => setShowEditModal(false)}
           clientData={{
             id: fullClientData.id,

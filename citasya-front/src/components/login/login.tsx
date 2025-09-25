@@ -4,21 +4,21 @@ import * as React from "react";
 import { ServiceFormField } from "../InputField";
 import { useUser } from "../../context/UserContext";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-  const { login } = useUser();
+  const { login } = useUser(); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null); // Nuevo estado para el error
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null); // Resetear el error al intentar de nuevo
+    setError(null);
     try {
-      await login(email, password);
-      window.location.href = "/"; 
+      await login(email, password, router);
     } catch (err: unknown) {
-      // Capturar el mensaje de error del backend
       let errorMessage = "Error al iniciar sesión. Inténtalo de nuevo.";
       if (err instanceof Error && err.message) {
         errorMessage = err.message;
@@ -37,7 +37,7 @@ export default function LoginForm() {
           <h2 className="mt-10 text-xl font-medium text-neutral-600 max-md:mt-10"> 
             Inicia sesión en tu cuenta 
           </h2> 
-        </header>         
+        </header>         
         <form onSubmit={handleLogin} className="mt-10 space-y-4">
           <ServiceFormField
             value={email}

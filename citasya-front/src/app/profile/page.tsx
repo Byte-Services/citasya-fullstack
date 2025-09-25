@@ -116,7 +116,9 @@ function UserDataForm() {
                         label="Rol"
                         name="role"
                         value={userData.role}
-                        options={roleOptions}
+                        options={user?.role === 'Admin' ? (
+                            roleOptions) : [{ value: userData.role, label: userData.role }]
+                        }
                         onChange={handleChange}
                         readOnly={!isEditing}
                         placeholder="Selecciona un rol"
@@ -141,6 +143,7 @@ function UserDataForm() {
 
 // Componente principal de la página
 function Profile() {
+  const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
   const handleUserAdded = (newUser: User) => {
@@ -158,16 +161,18 @@ function Profile() {
           Perfil de Usuario
         </h1>
         <UserDataForm />
-        <div className="mt-10">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-[#447F98] hover:bg-[#629BB5] p-3 mt-2 text-sm text-white rounded-md flex items-center whitespace-nowrap"
-            style={{ fontFamily: "Poppins, sans-serif" }}
+        {user?.role === 'Admin' ? (
+          <div className="mt-10">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-[#447F98] hover:bg-[#629BB5] p-3 mt-2 text-sm text-white rounded-md flex items-center whitespace-nowrap"
+              style={{ fontFamily: "Poppins, sans-serif" }}
           >
             <VscAdd className="h-5 w-5 mr-1" />
             <span>Nuevo Usuario</span>
           </button>
         </div>
+        ) : null}
 
         {/* Modal de nuevo usuario */}
         {isModalOpen && (
