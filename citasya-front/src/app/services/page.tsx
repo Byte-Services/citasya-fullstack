@@ -10,6 +10,7 @@ import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from "@/components/InputField";
 import { toast } from 'react-hot-toast';
 import { useUser } from '@/context/UserContext';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 interface SpecialtyData {
   id: number;
@@ -27,6 +28,7 @@ interface ServiceData {
 }
 
 const Services: React.FC = () => {
+  useAuthRedirect();
   const { user } = useUser();
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);

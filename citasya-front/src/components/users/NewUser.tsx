@@ -4,6 +4,7 @@ import React, { useState, ChangeEvent } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { UserRole, User } from '../../types/user';
+import { toast } from 'react-hot-toast/headless';
 
 interface NewUserProps {
   onClose: () => void;
@@ -114,6 +115,8 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
       if (!response.ok) {
         throw new Error(responseData?.message || 'Error al crear el usuario');
       }
+
+      toast.success(`Agregado correctamente el Usuario ${formData.name}`);
 
       onUserAdded(responseData as User);
       onClose();

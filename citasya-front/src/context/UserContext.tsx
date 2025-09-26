@@ -1,12 +1,13 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "../types/user";
-import { NextRouter } from 'next/router'; 
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'; 
+import { NextRouter } from "next/router";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type UserContextType = {
   user: User | null;
   token: string | null;
+  loading: boolean;
   login: (email: string, password: string, router: AppRouterInstance | NextRouter) => Promise<void>;
   logout: () => void;
   updateUser: (newUser: User) => void;
@@ -17,14 +18,18 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // <-- NUEVO
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
+
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
+
+    setLoading(false); // <-- ya terminó de evaluar
   }, []);
 
   const login = async (email: string, password: string, router: AppRouterInstance | NextRouter) => {
@@ -42,14 +47,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setToken(data.token);
-    setUser(data.user); 
+    setUser(data.user);
 
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
     console.log("🔑 Token recibido en frontend:", data.token);
 
-    // Redirección condicional ahora que 'data.user' es seguro
     if (data.user.role === "Coordinator") {
       router.push("/appointments");
     } else if (data.user.role === "Admin") {
@@ -70,7 +74,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout, updateUser }}>
+    <UserContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
       {children}
     </UserContext.Provider>
   );

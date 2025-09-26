@@ -11,6 +11,7 @@ import { NewAppointment } from "@/components/appointments/NewAppointment";
 import { useRouter } from 'next/navigation';
 import { CiCalendar } from "react-icons/ci";
 import LoginForm from "../components/login/login";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 interface DashboardData {
   confirmedAppointments: number;
@@ -22,6 +23,7 @@ interface DashboardData {
 }
 
 function HomePage() {
+    useAuthRedirect();
     const [showModalAppointment, setShowModalAppointment] = React.useState(false);
     const handleOpenModalAppointment = () => setShowModalAppointment(true);
     const handleCloseModalAppointment = () => {

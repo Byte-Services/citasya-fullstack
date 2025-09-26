@@ -6,7 +6,10 @@ import { NewUser } from "../../components/users/NewUser";
 import { VscAdd, VscEdit } from "react-icons/vsc";
 import { useUser } from "../../context/UserContext";
 import { UserRole, User } from "../../types/user";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+
 function UserDataForm() {
+    useAuthRedirect();
     const { user, token, updateUser } = useUser();
     const [isEditing, setIsEditing] = React.useState(false);
 

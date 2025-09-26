@@ -3,7 +3,7 @@ import { Poppins, Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { UserProvider } from "../context/UserContext";
-import { HeaderWrapper } from "../components/HeaderWrapper"; // 👈 importamos el wrapper
+import { HeaderWrapper } from "../components/HeaderWrapper"; 
 
 const poppins = Poppins({
   subsets: ["latin"],

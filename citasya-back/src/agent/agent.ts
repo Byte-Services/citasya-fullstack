@@ -3,7 +3,6 @@ import { ChatOpenAI } from "@langchain/openai";
 import {
     bookAppointmentTool,
     listServicesTool,
-    checkServiceAvailabilityTool,
     listUserAppointmentsTool,
     cancelAppointmentTool,
     getServiceDetailsTool,
@@ -32,7 +31,6 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
     listServicesTool,
     getServiceDetailsTool,
     getAvailableSlotsTool,          
-    checkServiceAvailabilityTool,
     bookAppointmentTool,
     listUserAppointmentsTool,
     cancelAppointmentTool,
