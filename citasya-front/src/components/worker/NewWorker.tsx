@@ -4,6 +4,7 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from '../InputField';
 import {Specialty, Service, Specialist } from '../../types/worker';
+import { toast } from "react-hot-toast";
 
 
 interface NewSpecialistProps {
@@ -171,6 +172,8 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
       if (!response.ok) {
         throw new Error(responseData?.message || 'Error al crear el especialista');
       }
+
+      toast.success(`Agregado correctamente el Especialista ${formData.name}`);
 
       onWorkerAdded(responseData as Specialist);
       onClose();

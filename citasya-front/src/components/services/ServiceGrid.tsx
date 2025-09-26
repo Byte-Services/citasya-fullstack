@@ -5,6 +5,7 @@ import { MdOutlineCurrencyExchange } from 'react-icons/md';
 import { TbCategory } from 'react-icons/tb';
 import { VscChromeClose, VscEdit, VscPulse } from 'react-icons/vsc';
 import { ServiceData } from '../../types/service';
+import { useUser } from '@/context/UserContext';
 
 interface ServiceGridProps {
   services: ServiceData[];
@@ -21,6 +22,8 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
   onEditService,
   onDeleteService,
 }) => {
+  const { user } = useUser();
+
   if (loading) {
     return <div className="text-center text-neutral-600">Cargando servicios...</div>;
   }
@@ -49,6 +52,7 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
                   <span>{service.specialty.name}</span>
                 </div>
               </div>
+              {user?.role === 'Admin' ? (
               <div className="flex space-x-2">
                 <button
                   className="text-gray-400 hover:text-gray-600"
@@ -65,6 +69,7 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
                   <VscChromeClose className="h-5 w-5" />
                 </button>
               </div>
+              ) : null}
             </div>
             <div className="text-sm text-gray-600 mb-5">
               <p className="mt-1">{service.description}</p>

@@ -21,8 +21,10 @@
   },
   "homepage": "https://github.com/Byte-Services/citasya-back#readme",
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/luxon": "^3.7.1",
     "@types/node": "^24.1.0",
     "@types/pg": "^8.15.5",
@@ -35,6 +37,7 @@
     "@langchain/community": "^0.3.56",
     "@langchain/core": "^0.3.76",
     "@langchain/openai": "^0.6.3",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.1",

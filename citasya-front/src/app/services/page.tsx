@@ -9,6 +9,8 @@ import { VscAdd } from "react-icons/vsc";
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from "@/components/InputField";
 import { toast } from 'react-hot-toast';
+import { useUser } from '@/context/UserContext';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 interface SpecialtyData {
   id: number;
@@ -26,6 +28,8 @@ interface ServiceData {
 }
 
 const Services: React.FC = () => {
+  useAuthRedirect();
+  const { user } = useUser();
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -66,7 +70,7 @@ const Services: React.FC = () => {
 
   const handleOpenDeleteModal = (serviceId: string) => {
       setDeletingServiceId(serviceId);
-      setDeletingErrorMessage(null); // Limpiamos cualquier error previo
+      setDeletingErrorMessage(null); 
       setShowDeleteModal(true);
   };
 
@@ -238,7 +242,9 @@ const Services: React.FC = () => {
   const specialtySelectOptions: SelectOption<string>[] = [
     { value: '', label: 'Todos' },
     ...specialties.map(s => ({ value: s.id.toString(), label: s.name })),
-    { value: 'manage_specialties', label: 'Añadir especialidad...' },
+    ...(user?.role === 'Admin'
+      ? [{ value: 'manage_specialties', label: 'Añadir especialidad...' }]
+      : [])
   ];
 
   const statusSelectOptions: SelectOption<string>[] = [
@@ -287,13 +293,15 @@ const Services: React.FC = () => {
             </div>
           </div>
           {/* Botón Nuevo Servicio */}
-          <button
-            onClick={handleOpenNewModal}
-            className="bg-[#447F98] hover:bg-[#629BB5] text-white text-sm py-2 px-4 rounded-md flex items-center"
-          >
-            <VscAdd className="h-5 w-5 mr-1" />
+          {user?.role === 'Admin' ? (
+            <button
+              onClick={handleOpenNewModal}
+              className="bg-[#447F98] hover:bg-[#629BB5] text-white text-sm py-2 px-4 rounded-md flex items-center"
+            >
+              <VscAdd className="h-5 w-5 mr-1" />
             <span>Nuevo Servicio</span>
           </button>
+          ) : null}
         </div>
 
         {/* Grid de servicios */}

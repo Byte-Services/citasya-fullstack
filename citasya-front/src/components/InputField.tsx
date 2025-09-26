@@ -68,7 +68,7 @@ export const ServiceFormField = <T extends string | number>({
       return (
         <div className={`flex flex-col mt-4 ${className}`}>
           <label className="text-sm font-medium text-neutral-600">{label}</label>
-          <div className="px-5 pt-2 pb-4 mt-2 text-sm bg-white w-full border-[#D6EBF3] rounded-lg max-md:pr-5 ">
+          <div className="px-5 pt-4 pb-4 mt-2 text-sm bg-[#D6EBF3]/50 w-full border-[#447F98] text-neutral-600 rounded-lg max-md:pr-5 ">
             {displayValues || '-'}
           </div>
         </div>
@@ -77,7 +77,7 @@ export const ServiceFormField = <T extends string | number>({
     return (
       <div className={`flex flex-col mt-4 ${className}`}>
         <label className="text-sm font-medium text-neutral-600">{label}</label>
-        <div className="px-5 pt-2 pb-4 mt-2 text-sm bg-white rounded-lg border-[#D6EBF3] w-full max-md:pr-5 whitespace-pre-wrap">
+        <div className="px-5 pt-4 pb-4 mt-2 text-sm bg-[#D6EBF3]/50 rounded-lg border-[#447F98] text-neutral-600 w-full max-md:pr-5 whitespace-pre-wrap">
           {String(value) || '-'}
         </div>
       </div>

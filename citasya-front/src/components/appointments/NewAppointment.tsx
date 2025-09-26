@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from '../InputField';
+import { toast } from 'react-hot-toast/headless';
 
 interface NewAppointmentProps {
   onClose: () => void;
@@ -133,7 +134,9 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
     const fetchSlots = async () => {
       if (formData.workerId && formData.date) {
         try {
-          const response = await fetch(`${API_URL}/appointments/available-slots?workerId=${formData.workerId}&date=${formData.date}`);
+          const response = await fetch(
+            `${API_URL}/appointments/available-slots?workerId=${formData.workerId}&date=${formData.date}&serviceId=${formData.serviceId}`
+          );
           if (!response.ok) throw new Error("Error obteniendo horarios disponibles");
           const data = await response.json();
           setAvailableHours(data.slots || []);
@@ -146,7 +149,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
       }
     };
     fetchSlots();
-  }, [formData.workerId, formData.date, API_URL]);
+  }, [formData.workerId, formData.date, formData.serviceId, API_URL]);
   
   const handleChange = (
     e:
@@ -216,6 +219,8 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
       if (!response.ok) {
         throw new Error(responseData.error || responseData.message || 'Error al crear la cita.');
       }
+
+      toast.success(`Agregada correctamente la cita`);
 
       onClose();
       window.location.reload(); 

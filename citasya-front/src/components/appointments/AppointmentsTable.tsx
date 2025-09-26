@@ -33,6 +33,23 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<AppointmentStatus | ''>('');
 
+  // --- PAGINACIÓN ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const totalPages = Math.ceil(appointments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAppointments = appointments.slice(startIndex, startIndex + itemsPerPage);
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+  // -------------------
+
   const openStatusModal = (appointment: AppointmentData) => {
     setSelectedAppointment(appointment);
     setNewStatus(appointment.status as AppointmentStatus);
@@ -59,11 +76,11 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
   };
 
   const statusOptionsForModal: SelectOption<string>[] = Object.values(AppointmentStatus)
-  .filter(status => status !== AppointmentStatus.Cancelado)
-  .map(status => ({
-    value: status,
-    label: status
-  }));
+    .filter(status => status !== AppointmentStatus.Cancelado)
+    .map(status => ({
+      value: status,
+      label: status
+    }));
 
   const handleStatusChange = (e: { target: { name?: string; value: string | string[] } }) => {
     setNewStatus(e.target.value as AppointmentStatus);
@@ -75,7 +92,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
     }
     return time;
   };
-  
+
   return (
     <div className="bg-white overflow-hidden" style={{ fontFamily: 'Poppins, sans-serif'}}>
       <table className="min-w-full divide-y divide-gray-200">
@@ -91,7 +108,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {appointments.map((appointment) => (
+          {paginatedAppointments.map((appointment) => (
             <tr key={appointment.id}>
               <td className="px-6 py-4 whitespace-nowrap text-xs">
                 <span
@@ -118,9 +135,9 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{appointment.clientName}</td>
               <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{formatTime(appointment.time)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                  {appointment.professional ? appointment.professional : 'Especialista eliminado'}
-                </td>
+              <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                {appointment.professional ? appointment.professional : 'Especialista eliminado'}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-xs font-medium flex gap-2">
                 {appointment.status === AppointmentStatus.Pendiente || appointment.status === AppointmentStatus.Confirmado || appointment.status === AppointmentStatus.Concluida ? (
                   <>
@@ -147,6 +164,29 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
           ))}
         </tbody>
       </table>
+
+      {/* Controles de paginación */}
+      <div className="flex justify-between items-center mt-6 px-6">
+        <button
+          onClick={goToPreviousPage}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded-lg text-xs shadow ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
+        >
+          ← Anterior
+        </button>
+
+        <span className="text-sm text-gray-600">
+          Página {currentPage} de {totalPages}
+        </span>
+
+        <button
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-2 rounded-lg text-xs shadow ${currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
+        >
+          Siguiente →
+        </button>
+      </div>
 
       {/* Modal para cambiar estado */}
       {showStatusModal && selectedAppointment && ReactDOM.createPortal(

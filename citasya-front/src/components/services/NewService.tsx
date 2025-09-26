@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ServiceFormField } from '../InputField';
 import { VscChromeClose } from "react-icons/vsc";
 import { SpecialtyData } from '../../types/service';
+import { toast } from 'react-hot-toast/headless';
 
 interface NewServiceProps {
   onClose: () => void;
@@ -71,6 +72,9 @@ export const NewService: React.FC<NewServiceProps> = ({ onClose, specialties }) 
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error al agregar el servicio');
       }
+
+      toast.success(`Agregado correctamente el Servicio ${formData.name}`);
+
 
       await response.json();
       onClose();

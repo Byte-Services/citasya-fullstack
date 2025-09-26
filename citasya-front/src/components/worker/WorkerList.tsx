@@ -52,7 +52,7 @@ function SpecialistCard({
 }
 
 export function SpecialistList() {
-const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
+  const [specialists, setSpecialists] = React.useState<Specialist[]>([]);
   const [allServices, setAllServices] = React.useState<{ id: number; name: string }[]>([]); 
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

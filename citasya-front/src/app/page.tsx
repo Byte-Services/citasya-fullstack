@@ -2,7 +2,7 @@
 import * as React from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
+import { useUser } from "../context/UserContext"; 
 import { StatsCard } from "../components/dashboard/StatsCard";
 import { AppointmentsList } from "../components/dashboard/AppointmentsList";
 import { ServicesChart } from "../components/dashboard/ServiceChart";
@@ -10,6 +10,8 @@ import { VscAdd, VscCalendar } from "react-icons/vsc";
 import { NewAppointment } from "@/components/appointments/NewAppointment";
 import { useRouter } from 'next/navigation';
 import { CiCalendar } from "react-icons/ci";
+import LoginForm from "../components/login/login";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 interface DashboardData {
   confirmedAppointments: number;
@@ -21,6 +23,7 @@ interface DashboardData {
 }
 
 function HomePage() {
+    useAuthRedirect();
     const [showModalAppointment, setShowModalAppointment] = React.useState(false);
     const handleOpenModalAppointment = () => setShowModalAppointment(true);
     const handleCloseModalAppointment = () => {
@@ -30,6 +33,7 @@ function HomePage() {
     const [activeTab, setActiveTab] = React.useState<'day' | 'week' | 'month'>('day');
     const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
     const [loadingData, setLoadingData] = React.useState(true);
+    const { user } = useUser();
 
     const formatRangeDisplay = (tab: string, startDate: Date, endDate: Date): string => {
  
@@ -93,7 +97,9 @@ function HomePage() {
     }, [activeTab]);
 
     const displayDateString = dashboardData ? formatRangeDisplay(activeTab, new Date(dashboardData.startDate), new Date(dashboardData.endDate)) : 'Cargando...';
-
+    if (!user) {
+        return <LoginForm />;
+    }
     return (
         <div className="flex overflow-hidden flex-col items-center pb-28 bg-[#F9FAFB] max-md:pb-24" style={{ fontFamily: 'Poppins, sans-serif'}}>
             <main className="flex flex-col w-full px-30">

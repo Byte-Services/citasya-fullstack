@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
+import { toast } from 'react-hot-toast/headless';
 
 interface NuevoClienteProps {
   onClose: () => void;
@@ -88,6 +89,9 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
       if (!response.ok) {
         throw new Error("Error al crear el cliente. Por favor, intenta de nuevo.");
       }
+
+      toast.success(`Agregado correctamente el Cliente ${formData.nombre}`);
+
       onClose();
 
     } catch (e: unknown) {

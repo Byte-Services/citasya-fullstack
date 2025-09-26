@@ -3,6 +3,7 @@ import { AppointmentsService } from "./appointment.service.js";
 import { Worker } from "../workers/worker.model.js"; 
 import { AppDataSource } from "../../data-source.js";
 import { Appointment } from "./appointment.model.js";
+import { Service } from "../services/service.model.js";
 
 // Instancia del servicio de citas
 const appointmentsService = new AppointmentsService();
@@ -109,25 +110,35 @@ export class AppointmentsController {
    */
     async getAvailableSlots(req: Request, res: Response) {
       try {
-        const { workerId, date } = req.query;
+        const { workerId, date, serviceId } = req.query;
 
-        if (!workerId || !date) {
-          return res.status(400).json({ error: "workerId y date son requeridos" });
+        if (!workerId || !date || !serviceId) {
+          return res.status(400).json({ error: "workerId, date y serviceId son requeridos" });
         }
 
         const workerRepo = AppDataSource.getRepository(Worker);
+        const serviceRepo = AppDataSource.getRepository(Service);
+
+        // Traemos también appointments.service para poder calcular end_time si hace falta
         const worker = await workerRepo.findOne({
           where: { id: Number(workerId) },
-          relations: ["appointments", "services"],
+          relations: ["appointments", "appointments.service", "services"],
         });
 
-        if (!worker) {
-          return res.status(404).json({ error: "Especialista no encontrado" });
-        }
+        if (!worker) return res.status(404).json({ error: "Especialista no encontrado" });
 
         if (!worker.schedule) {
           return res.status(400).json({ error: "El especialista no tiene horario configurado" });
         }
+
+        const service = await serviceRepo.findOne({ where: { id: Number(serviceId) } });
+        if (!service) return res.status(404).json({ error: "Servicio no encontrado" });
+
+        const serviceDuration = service.minutes_duration ?? 30;
+
+        const queryDate = new Date(date as string);
+        // Normalizamos queryDate a 00:00:00 por si acaso
+        queryDate.setHours(0, 0, 0, 0);
 
         const dayOfWeek = new Date(`${date}T00:00:00-04:00`).toLocaleDateString("en-US", { weekday: "short" });
         const scheduleDay = worker.schedule.days[dayOfWeek as keyof typeof worker.schedule.days];
@@ -136,44 +147,104 @@ export class AppointmentsController {
           return res.json({ slots: [] });
         }
 
-        const slots: string[] = [];
+        // Jornada del worker en ese día
         const start = new Date(`${date}T${scheduleDay.startTime}`);
         const end = new Date(`${date}T${scheduleDay.endTime}`);
 
+        // Generar slots cada 15 min
+        const slots: string[] = [];
         for (let t = new Date(start); t < end; t.setMinutes(t.getMinutes() + 15)) {
           slots.push(t.toTimeString().slice(0, 5));
         }
+        console.log("Slots generados:", slots);
 
-        // Filtrar los ocupados
-        const queryDate = new Date(date as string);
+        // Filtrar citas del mismo día y con estado relevante
+        const sameDayAppointments = (worker.appointments || []).filter((a: Appointment) => {
+          const appointmentDate = new Date(a.date);
+          appointmentDate.setHours(0, 0, 0, 0);
+          return (
+            appointmentDate.getTime() === queryDate.getTime() &&
+            ["Pendiente", "Confirmado"].includes(a.status)
+          );
+        });
+
+        console.log("Citas del día (start-end):", sameDayAppointments.map(a => `${a.hour}-${a.end_time ?? 'no-end'}`));
+
+        // Generar slots ocupados (por 15 min) a partir de las citas del día
         const allTakenSlots: string[] = [];
+        sameDayAppointments.forEach((a: Appointment) => {
+          const startDateTime = new Date(`${date}T${a.hour}`);
+          // Si no hay end_time, intentar calcular usando appointment.service.minutes_duration o fallback 30
+          let endDateTime: Date;
+          if (a.end_time) {
+            endDateTime = new Date(`${date}T${a.end_time}`);
+          } else if ((a as any).service?.minutes_duration) {
+            endDateTime = new Date(startDateTime.getTime() + ((a as any).service.minutes_duration ?? 30) * 60000);
+          } else {
+            endDateTime = new Date(startDateTime.getTime() + 30 * 60000);
+          }
 
-        worker.appointments
-            .filter((a: Appointment) => {
-                const appointmentDate = new Date(a.date);
-                const isSameDay =
-                    appointmentDate.getFullYear() === queryDate.getFullYear() &&
-                    appointmentDate.getMonth() === queryDate.getMonth() &&
-                    appointmentDate.getDate() === queryDate.getDate();
+          for (let t = new Date(startDateTime); t < endDateTime; t.setMinutes(t.getMinutes() + 15)) {
+            allTakenSlots.push(t.toTimeString().slice(0, 5));
+          }
+        });
 
-                // Asegúrate de filtrar solo las citas que están Pendientes o Confirmadas
-                return isSameDay && ["Pendiente", "Confirmado"].includes(a.status);
-            })
-            .forEach((a: Appointment) => {
-                // Genera un rango de slots de 15 minutos entre la hora de inicio y de fin de la cita
-                const startDateTime = new Date(`${date}T${a.hour}`);
-                const endDateTime = new Date(`${date}T${a.end_time}`);
+        let available = slots.filter(slot => !allTakenSlots.includes(slot));
+        console.log("Después de quitar ocupados:", available);
 
-                for (let t = new Date(startDateTime); t < endDateTime; t.setMinutes(t.getMinutes() + 15)) {
-                    allTakenSlots.push(t.toTimeString().slice(0, 5));
-                }
-            });
+        // Excluir horario de descanso solo si es válido y distinto de 'none'
+        if (
+          worker.schedule.breakTime &&
+          worker.schedule.breakTime.toString().toLowerCase() !== "none" &&
+          worker.schedule.breakTime.includes("-")
+        ) {
+          const [breakStart, breakEnd] = worker.schedule.breakTime.split("-");
+          const breakStartDate = new Date(`${date}T${breakStart}`);
+          const breakEndDate = new Date(`${date}T${breakEnd}`);
 
-        const available = slots.filter(slot => !allTakenSlots.includes(slot));
+          available = available.filter(slot => {
+            const slotDate = new Date(`${date}T${slot}`);
+            return !(slotDate.getTime() >= breakStartDate.getTime() && slotDate.getTime() < breakEndDate.getTime());
+          });
+        }
+        console.log("Después de quitar break:", available);
+
+        // Validar que quepa el servicio completo en ese slot (usando solo sameDayAppointments)
+        available = available.filter(slot => {
+          const slotStart = new Date(`${date}T${slot}`);
+          const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
+
+          // Permitir que termine exactamente en endTime (igual está permitido)
+          if (slotEnd.getTime() > end.getTime()) return false;
+
+          // Chequear solapamiento con citas del mismo día
+          for (const a of sameDayAppointments) {
+            const apptStart = new Date(`${date}T${a.hour}`);
+            let apptEnd: Date;
+            if (a.end_time) {
+              apptEnd = new Date(`${date}T${a.end_time}`);
+            } else if ((a as any).service?.minutes_duration) {
+              apptEnd = new Date(apptStart.getTime() + ((a as any).service.minutes_duration ?? 30) * 60000);
+            } else {
+              apptEnd = new Date(apptStart.getTime() + 30 * 60000);
+            }
+
+            // Si overlap: slotStart < apptEnd && slotEnd > apptStart -> solapa
+            if (slotStart.getTime() < apptEnd.getTime() && slotEnd.getTime() > apptStart.getTime()) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        console.log("Después de validar duración:", available);
 
         return res.json({ slots: available });
       } catch (err) {
+        console.error(err);
         return res.status(500).json({ error: "Error obteniendo horarios disponibles" });
       }
     }
+
 }

@@ -5,6 +5,7 @@ import { ServiceFormField } from '../../components/InputField';
 import { AppointmentsTable } from '../../components/appointments/AppointmentsTable';
 import { VscAdd, VscRefresh } from "react-icons/vsc";
 import { NewAppointment } from '../../components/appointments/NewAppointment';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 interface Client {
   name: string;
@@ -37,6 +38,7 @@ interface Appointment {
 
 
 const Appointments: React.FC = () => {
+  useAuthRedirect();
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedEspecialista, setSelectedEspecialista] = useState('');
   const [selectedService, setSelectedService] = useState('');
