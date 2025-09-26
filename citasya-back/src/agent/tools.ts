@@ -155,40 +155,65 @@ async function getAppointmentsForWorkersOnDate(workerIds: number[], date: Date) 
   return apps;
 }
 
-// Intersecta el horario del centro con la agenda del worker (si tiene schedule),
+// Intersecta el horario del centro con la agenda del worker,
 // y sustrae bloques ocupados por citas para producir slots disponibles
 function computeWorkerFreeSlotsForDay(
-  serviceDuration: number,
-  date: Date,
-  workerSchedule: any | null,
-  existingAppointments: Appointment[],
-  maxSlots = 10
+  serviceDuration: number,
+  date: Date,
+  workerSchedule: any | null,
+  existingAppointments: Appointment[],
 ): { start: string; end: string }[] {
-  const center = getCenterWindow(date);
-  // Por ahora ignoramos schedule detallado y usamos horario del centro si schedule es null
-  // Si quisieras usar schedule JSON del worker, intersecta aquí (por día de semana).
-  const baseStart = center.start;
-  const baseEnd = center.end;
+  const localDow = date.getDay() as DayIdx;
+  const centerHours = getCenterWindow(date);
+  let baseStart = centerHours.start;
+  let baseEnd = centerHours.end;
 
-  // Bloques ocupados por citas del worker
-  const busy: { start: string; end: string }[] = existingAppointments.map(a => ({
-    start: a.hour,
-    end: a.end_time ?? addMinutes(a.hour, 60) // fallback por si faltan datos antiguos
-  }));
+  if (workerSchedule && workerSchedule.days) {
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][localDow];
+    const workerDaySchedule = workerSchedule.days[dayOfWeek];
 
-  // Generamos candidatos cada 15 minutos
-  const candidates = generateCandidateSlots(baseStart, baseEnd, serviceDuration, 15);
+    if (!workerDaySchedule || !workerDaySchedule.enabled) {
+      return [];
+    }
 
-  const result: { start: string; end: string }[] = [];
-  for (const start of candidates) {
-    const end = addMinutes(start, serviceDuration);
-    const overlaps = busy.some(b => rangesOverlap(start, end, b.start, b.end));
-    if (!overlaps) {
-      result.push({ start, end });
-      if (result.length >= maxSlots) break;
-    }
-  }
-  return result;
+    const workerStart = workerDaySchedule.startTime;
+    const workerEnd = workerDaySchedule.endTime;
+
+    const startMinutes = Math.max(toMinutes(baseStart), toMinutes(workerStart));
+    const endMinutes = Math.min(toMinutes(baseEnd), toMinutes(workerEnd));
+
+    if (startMinutes >= endMinutes) {
+      return [];
+    }
+
+    baseStart = toHHMM(startMinutes);
+    baseEnd = toHHMM(endMinutes);
+  }
+
+  const busy: { start: string; end: string }[] = existingAppointments.map(a => ({
+    start: a.hour,
+    end: a.end_time ?? addMinutes(a.hour, 60)
+  }));
+
+  if (workerSchedule && workerSchedule.breakTime) {
+    const breakStart = workerSchedule.breakTime;
+    const breakEnd = addMinutes(breakStart, 60);
+    if (rangesOverlap(baseStart, baseEnd, breakStart, breakEnd)) {
+      busy.push({ start: breakStart, end: breakEnd });
+    }
+  }
+
+  const candidates = generateCandidateSlots(baseStart, baseEnd, serviceDuration, 15);
+
+  const result: { start: string; end: string }[] = [];
+  for (const start of candidates) {
+    const end = addMinutes(start, serviceDuration);
+    const overlaps = busy.some(b => rangesOverlap(start, end, b.start, b.end));
+    if (!overlaps) {
+      result.push({ start, end });
+    }
+  }
+  return result;
 }
 
 // ---------------- TOOLS ----------------
@@ -292,57 +317,91 @@ export const getServiceDetailsTool = new DynamicStructuredTool({
 
 // Obtener horarios disponibles para un servicio y una fecha
 export const getAvailableSlotsTool = new DynamicStructuredTool({
-  name: "get_available_slots",
-  description: "Devuelve opciones de horarios disponibles para un servicio en una fecha dada (YYYY-MM-DD), considerando el horario del centro y las agendas de los especialistas.",
-  schema: z.object({
-    servicio: z.string().describe("Nombre del servicio"),
-    fecha: z.string().describe("Fecha para la búsqueda en formato YYYY-MM-DD"),
-  }),
-  func: async ({ servicio, fecha }) => {
-    const normalizedDate = normalizeDate(fecha);
-    const service = await getServiceByName(servicio);
-    if (!service || service.status !== ServiceStatus.Activo) return `El servicio '${servicio}' no está disponible.`;
-    const duration = service.minutes_duration ?? 60;
-    
-    const workers = await getWorkersForService(service.id);
-    if (!workers.length) return `No hay especialistas activos para '${servicio}'.`;
-    
-    const day = new Date(normalizedDate);
-    day.setHours(0,0,0,0);
-    
-    const workerIds = workers.map(w => w.id);
-    const dayAppointments = await getAppointmentsForWorkersOnDate(workerIds, day);
-    
-    const mapApps = new Map<number, Appointment[]>();
-    for (const w of workers) mapApps.set(w.id, []);
-    for (const a of dayAppointments) {
-      const list = mapApps.get(a.worker_id!)!;
-      list.push(a);
-    }
-    
-    type Suggestion = { worker_id: number; worker_name: string; start: string; end: string };
-    const suggestions: Suggestion[] = [];
-    const maxSlots = 10;
-    
-    for (const w of workers) {
-      const free = computeWorkerFreeSlotsForDay(
-        duration, day, (w as any).schedule ?? null,
-        mapApps.get(w.id) || [],
-        maxSlots
-      );
-      for (const slot of free) {
-        suggestions.push({ worker_id: w.id, worker_name: w.name, start: slot.start, end: slot.end });
-      }
-    }
-    
-    suggestions.sort((a,b) => toMinutes(a.start) - toMinutes(b.start));
-    
-    if (!suggestions.length) return `No hay disponibilidad para '${servicio}' el ${normalizedDate}.`;
-    
-    const top = suggestions.slice(0, 5); // Mostrar solo las 5 mejores opciones
-    const lines = top.map((s, i) => `${i+1}. ${normalizedDate} ${s.start}-${s.end} con ${s.worker_name} (ID especialista: ${s.worker_id})`);
-    return `Opciones disponibles para '${servicio}':\n` + lines.join('\n');
-  }
+  name: "get_available_slots",
+  description: "Devuelve opciones de horarios disponibles para un servicio en una fecha dada (YYYY-MM-DD), considerando el horario del centro y las agendas de los especialistas. Si se proporciona una hora, verifica primero si ese slot está disponible.",
+  schema: z.object({
+    servicio: z.string().describe("Nombre del servicio"),
+    fecha: z.string().describe("Fecha para la búsqueda en formato YYYY-MM-DD"),
+    hora: z.string().optional().describe("Hora preferida para la cita en formato HH:mm")
+  }),
+  func: async ({ servicio, fecha, hora }) => {
+    const normalizedDate = normalizeDate(fecha);
+    const service = await getServiceByName(servicio);
+    if (!service || service.status !== ServiceStatus.Activo) return `El servicio '${servicio}' no está disponible.`;
+    const duration = service.minutes_duration ?? 60;
+    const workers = await getWorkersForService(service.id);
+    if (!workers.length) return `No hay especialistas activos para '${servicio}'.`;
+    const day = new Date(normalizedDate);
+    day.setHours(0, 0, 0, 0);
+
+    const workerIds = workers.map(w => w.id);
+    const dayAppointments = await getAppointmentsForWorkersOnDate(workerIds, day);
+    const mapApps = new Map<number, Appointment[]>();
+    for (const w of workers) mapApps.set(w.id, []);
+    for (const a of dayAppointments) {
+      const list = mapApps.get(a.worker_id!)!;
+      list.push(a);
+    }
+
+    type Suggestion = { worker_id: number; worker_name: string; start: string; end: string };
+
+    if (hora) {
+      for (const w of workers) {
+        const end = addMinutes(hora, duration);
+        const busy = mapApps.get(w.id)!.some(a => rangesOverlap(hora, end, a.hour, a.end_time!));
+        if (!busy) {
+          return `El horario de ${hora}-${end} está disponible con ${w.name}.`;
+        }
+      }
+      return `Lo siento, el horario de ${hora} no está disponible. A continuación, te mostramos otras opciones.`;
+    }
+
+    const suggestions: Suggestion[] = [];
+    for (const w of workers) {
+      const free = computeWorkerFreeSlotsForDay(
+        duration,
+        day,
+        w.schedule,
+        mapApps.get(w.id) || []
+      );
+      for (const slot of free) {
+        suggestions.push({ worker_id: w.id, worker_name: w.name, start: slot.start, end: slot.end });
+      }
+    }
+
+    const uniqueSuggestions = Array.from(new Map(suggestions.map(item => [`${item.worker_id}-${item.start}`, item])).values());
+    uniqueSuggestions.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+
+    if (!uniqueSuggestions.length) return `No hay disponibilidad para '${servicio}' el ${normalizedDate}.`;
+
+    const maxMorningSlots = 3;
+    const maxAfternoonSlots = 2;
+
+    const morningSlots = uniqueSuggestions.filter(s => toMinutes(s.start) < toMinutes('12:00')).slice(0, maxMorningSlots);
+    const afternoonSlots = uniqueSuggestions.filter(s => toMinutes(s.start) >= toMinutes('12:00')).slice(0, maxAfternoonSlots);
+
+    let responseLines = [];
+    if (morningSlots.length > 0) {
+      responseLines.push('**Horarios de la mañana:**');
+      for (const slot of morningSlots) {
+        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name}`);
+      }
+    }
+
+    if (afternoonSlots.length > 0) {
+      if (responseLines.length > 0) {
+        responseLines.push('');
+      }
+      responseLines.push('**Horarios de la tarde:**');
+      for (const slot of afternoonSlots) {
+        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name}`);
+      }
+    }
+
+    const lines = responseLines.join('\n');
+
+    return `Opciones disponibles para '${servicio}' el ${normalizedDate}:\n${lines}`;
+  }
 });
 
 // Reservar cita
