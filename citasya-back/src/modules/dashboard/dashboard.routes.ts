@@ -13,4 +13,7 @@ router.get('/dashboard-appointments', dashboardController.getDashboardAppointmen
 // Ruta para obtener los datos del gráfico de servicios
 router.get('/dashboard-services', dashboardController.getServicesChartData);
 
+router.get("/dashboard-revenue", dashboardController.getRevenueChartData);
+
+
 export default router;

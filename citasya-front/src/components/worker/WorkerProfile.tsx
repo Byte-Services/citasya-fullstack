@@ -232,8 +232,8 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
               )}
 
         </div>
-        <div className="flex justify-center">
-          <button onClick={() => setShowDeleteModal(true)} className="flex justify-center items-center self-center px-10 py-3 mt-6 text-sm font-medium text-center rounded-lg bg-[#FEE2E2] text-[#B91C1C] shadow-md w-full max-w-[141px] hover:bg-[#FFC1C1] transition-colors">
+        <div className="flex justify-end px-8">
+          <button onClick={() => setShowDeleteModal(true)} className="flex justify-center items-center self-center px-10 py-3 mt-6 text-xs font-medium text-center rounded-lg bg-[#FEE2E2] text-[#B91C1C] shadow-md w-full max-w-[141px] hover:bg-[#FFC1C1] transition-colors">
             <span>Eliminar Especialista</span>
           </button>
         </div>
