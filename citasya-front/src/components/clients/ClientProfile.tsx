@@ -277,6 +277,9 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
             <div>{clientData.notes}</div>
           </div>
         </div>
+  
+        {user?.role === 'Admin' ? (
+         <>
 
         {/* Gráfico de Citas Concluidas por Mes */}
         <div className="w-full h-64 px-8 mt-6">
@@ -306,6 +309,8 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
             </div>
           )}
         </div>
+        </>
+        ) : null }
 
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
           Historial de Citas

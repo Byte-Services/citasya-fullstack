@@ -47,15 +47,13 @@ Tu misión es ayudar a los clientes a conocer nuestros servicios, precios, y a a
 {chat_history}
 `;
 
-// La lógica para envolver las herramientas se mantiene
 function wrapToolWithPhone(tool: DynamicStructuredTool, senderPhone: string): DynamicStructuredTool {
   return new DynamicStructuredTool({
     name: tool.name,
     description: tool.description,
     schema: tool.schema,
     func: async (args: any) => {
-      // Inyecta el teléfono si el esquema de la herramienta lo requiere
-      if (['find_client_by_phone', 'create_client', 'list_user_appointments'].includes(tool.name)) {
+      if (['find_client_by_phone', 'create_client', 'list_user_appointments', 'book_appointment'].includes(tool.name)) {
         args.telefono = senderPhone;
       }
       return tool.func(args);
@@ -97,7 +95,7 @@ export async function createSpaAgent() {
   return {
     async invoke(input: { input: string; chat_history: any[]; sender_phone: string }) {
       const wrappedTools = tools.map(tool => wrapToolWithPhone(tool, input.sender_phone));
-      executor.tools = wrappedTools; // Asigna las herramientas envueltas
+      executor.tools = wrappedTools;
       
       const finalHistory = [
         { role: "system", content: SYSTEM_PROMPT },

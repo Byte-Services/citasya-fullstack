@@ -316,7 +316,6 @@ export const getServiceDetailsTool = new DynamicStructuredTool({
 });
 
 // Obtener horarios disponibles para un servicio y una fecha
-// Obtener horarios disponibles para un servicio y una fecha
 export const getAvailableSlotsTool = new DynamicStructuredTool({
   name: "get_available_slots",
   description: `Devuelve opciones de horarios disponibles para un servicio en una fecha dada. 
