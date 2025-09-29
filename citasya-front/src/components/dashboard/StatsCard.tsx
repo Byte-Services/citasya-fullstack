@@ -12,6 +12,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   title,
   value,
   variant,
+  percentChange,
 }) => {
   const getCardStyles = () => {
     return 'bg-[#D6EBF3] text-[#447F98]'
@@ -40,7 +41,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({
       </div>
       </div>
       <div className="mt-4 px-6 pb-6 pt-3 border-t-[4px] border-white/40 justify-center">
-          <p className="text-sm mt-2 text-medium">Cambios del 3%</p>
+        <p className="text-sm mt-2 text-medium">
+          Cambio: {percentChange ?? "0%"}
+        </p>
       </div>
     </div>
   )

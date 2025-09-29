@@ -7,6 +7,7 @@ import { EditarCliente } from "./EditClient";
 import { EliminarCliente } from "./DeleteClient";
 import { useUser } from "../../context/UserContext";
 import { VscChevronLeft, VscChevronRight } from "react-icons/vsc"; 
+import {  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
 
 interface FullClientData {
   id: number;
@@ -23,6 +24,21 @@ interface FullClientData {
     };
   }[];
 }
+
+interface MonthlyData {
+  month: string;
+  citas: number;
+  total: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: {
+    payload: MonthlyData;
+  }[];
+  label?: string;
+}
+
 
 
 interface ClientProfileProps {
@@ -70,6 +86,68 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
     fetchClientProfile();
   }, [clientId, fetchClientProfile]);
 
+  // --- Transformar citas concluidas a dataset mensual ---
+  const monthlyData: MonthlyData[] = React.useMemo(() => {
+    const grouped: { [key: string]: { citas: number; total: number } } = {};
+
+    if (fullClientData && fullClientData.appointments) {
+      fullClientData.appointments
+        .filter(appt => appt.status === "Concluida")
+        .forEach(appt => {
+          const date = new Date(appt.date);
+          const key = `${date.getFullYear()}-${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}`;
+
+          if (!grouped[key]) {
+            grouped[key] = { citas: 0, total: 0 };
+          }
+
+          grouped[key].citas += 1;
+          grouped[key].total += parseFloat(appt.service?.price ?? "0");
+        });
+    }
+
+    let data = Object.entries(grouped).map(([month, values]) => ({
+      month,
+      citas: values.citas,
+      total: values.total,
+    }));
+
+    data.sort((a, b) => new Date(a.month + "-01").getTime() - new Date(b.month + "-01").getTime());
+
+    data = data.slice(0, 6);
+
+    return data.reverse();
+  }, [fullClientData]);
+
+
+
+// --- Custom tooltip para mostrar dinero invertido ---
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+
+    return (
+      <div className="bg-white p-3 shadow-md rounded-lg text-xs text-neutral-700">
+        <p className="font-medium">Mes: {label}</p>
+        <p>Citas concluidas: {data.citas}</p>
+        <p>
+          Inversión:{" "}
+          {data.total.toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+          })}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+
+
+
   const handleDeleteClient = async () => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients/${clientId}`, {
       method: "DELETE",
@@ -108,6 +186,8 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
       </div>
     );
   }
+
+  
 
   const clientData = {
     nombre: fullClientData.name,
@@ -162,7 +242,7 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
           <h2 className="text-base font-medium tracking-wide leading-none text-left text-[#447F98]">
               Perfil del Cliente
           </h2>
-        </div>
+        </div>        
         <div className="flex px-8 gap-4 justify-between items-center mt-6 text-sm font-medium text-neutral-600">
           <h3 className="flex items-center gap-2">
             <span>Datos del cliente</span>
@@ -196,6 +276,35 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
           <div className="flex flex-col px-5 py-3 mt-2 text-xs bg-white rounded-lg shadow-sm text-neutral-600">
             <div>{clientData.notes}</div>
           </div>
+        </div>
+
+        {/* Gráfico de Citas Concluidas por Mes */}
+        <div className="w-full h-64 px-8 mt-6">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+            <span>Citas concluidas por mes</span>
+          </h3>
+          {monthlyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData} margin={{ top: 20, right: 20, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={(monthStr: string) => {
+                    const [year, month] = monthStr.split("-");
+                    return `${month}/${year}`;
+                  }}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="citas" fill="#629BB5" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex justify-center items-center h-full text-sm text-gray-500">
+              Este cliente no ha tenido citas aún.
+            </div>
+          )}
         </div>
 
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
@@ -274,7 +383,7 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
         <h3 className="self-start px-8 mt-6 text-sm font-medium text-neutral-600">
             Total Invertido
         </h3>
-        <div className="self-center text-2xl font-bold text-center leading-[66px] text-[#629BB5]">
+        <div className="self-center text-xl font-bold text-center leading-[66px] text-[#629BB5]">
             {totalInvertido.toLocaleString("en-US", { style: "currency", currency: "USD" })}
         </div>
         </>

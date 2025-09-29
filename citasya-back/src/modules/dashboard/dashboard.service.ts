@@ -11,6 +11,16 @@ export class DashboardService {
     private appointmentRepository: Repository<Appointment>;
     private clientRepository: Repository<Client>;
     private serviceRepository: Repository<Service>;
+    private formatDateCaracas(date: Date): string {
+        return new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/Caracas",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        })
+            .format(date)
+            .replace(/\//g, "-"); // devuelve "yyyy-MM-dd"
+        }
 
     constructor() {
         this.appointmentRepository = AppDataSource.getRepository(Appointment);
@@ -114,4 +124,56 @@ export class DashboardService {
             color: colors[index % colors.length]
         }));
     }
+
+    /**
+     * Obtiene los ingresos por cita en un rango de fechas.
+     */
+    async getRevenueByDateRange(startDate: string, endDate: string) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // Trae solo citas concluidas con servicio para poder sumar precios
+        const appointments = await this.appointmentRepository.find({
+            where: {
+            status: AppointmentStatus.Concluida,
+            date: Between(start, end),
+            },
+            relations: ["service"],
+            order: { date: "ASC", hour: "ASC" },
+        });
+
+        const revenueMap: Record<string, number> = {};
+
+        // Si start y end son el mismo día => agrupamos por hora
+        const sameDay = start.toDateString() === end.toDateString();
+        appointments.forEach((appt) => {
+        const amount = Number(appt.service?.price ?? 0);
+
+        let key: string;
+        if (sameDay) {
+            key = appt.hour ? appt.hour.toString().slice(0, 5) : "00:00";
+        } else {
+            // ✅ Usa la fecha en Caracas, no en UTC
+            key = this.formatDateCaracas(new Date(appt.date));
+        }
+
+        revenueMap[key] = (revenueMap[key] || 0) + amount;
+        });
+
+
+
+        const result = Object.entries(revenueMap).map(([key, total]) => ({
+            date: key,
+            total,
+        }));
+
+        // ordenar cronológicamente (si es por hora => lexicográfico funciona, si es fecha => new Date)
+        result.sort((a, b) => {
+            if (sameDay) return a.date.localeCompare(b.date);
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
+
+        return result;
+    }
+
 }

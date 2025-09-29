@@ -60,4 +60,24 @@ export class DashboardController {
             return res.status(500).json({ message: 'Error interno del servidor al obtener datos del gráfico.' });
         }
     }
+
+    async getRevenueChartData(req: Request, res: Response): Promise<Response> {
+        try {
+            const { startDate, endDate } = req.query;
+            if (!startDate || !endDate) {
+            return res.status(400).json({ message: "Fechas requeridas" });
+            }
+
+            const data = await dashboardService.getRevenueByDateRange(
+            startDate as string,
+            endDate as string
+            );
+
+            return res.status(200).json(data);
+        } catch (error) {
+            console.error("Error en getRevenueChartData:", error);
+            return res.status(500).json({ message: "Error interno al obtener ingresos." });
+        }
+    }
+
 }
