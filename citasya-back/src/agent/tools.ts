@@ -316,9 +316,15 @@ export const getServiceDetailsTool = new DynamicStructuredTool({
 });
 
 // Obtener horarios disponibles para un servicio y una fecha
+// Obtener horarios disponibles para un servicio y una fecha
 export const getAvailableSlotsTool = new DynamicStructuredTool({
   name: "get_available_slots",
-  description: "Devuelve opciones de horarios disponibles para un servicio en una fecha dada (YYYY-MM-DD), considerando el horario del centro y las agendas de los especialistas. Si se proporciona una hora, verifica primero si ese slot está disponible.",
+  description: `Devuelve opciones de horarios disponibles para un servicio en una fecha dada. 
+    El formato correcto es YYYY-MM-DD. 
+    - Si el cliente no menciona el año, usa siempre el año actual (${new Date().getFullYear()}). 
+    - Si el cliente no menciona el mes, usa siempre el mes en curso (${new Date().getMonth() + 1}). 
+    Nunca inventes otro año o mes.
+    IMPORTANTE: La herramienta devuelve la respuesta en formato de texto. El agente debe parsear este texto para extraer el worker_id del especialista y el horario al hacer la reserva.`, // Descripción actualizada para el LLM
   schema: z.object({
     servicio: z.string().describe("Nombre del servicio"),
     fecha: z.string().describe("Fecha para la búsqueda en formato YYYY-MM-DD"),
@@ -343,6 +349,7 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
       list.push(a);
     }
 
+    // Se mantiene la definición del tipo para claridad
     type Suggestion = { worker_id: number; worker_name: string; start: string; end: string };
 
     if (hora) {
@@ -350,7 +357,8 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
         const end = addMinutes(hora, duration);
         const busy = mapApps.get(w.id)!.some(a => rangesOverlap(hora, end, a.hour, a.end_time!));
         if (!busy) {
-          return `El horario de ${hora}-${end} está disponible con ${w.name}.`;
+          // Formato de salida para hora preferida con worker_id
+          return `El horario de ${hora}-${end} está disponible con ${w.name} (ID: ${w.id}).`;
         }
       }
       return `Lo siento, el horario de ${hora} no está disponible. A continuación, te mostramos otras opciones.`;
@@ -369,6 +377,7 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
       }
     }
 
+    // Se ordena y se limita la cantidad de sugerencias para no saturar
     const uniqueSuggestions = Array.from(new Map(suggestions.map(item => [`${item.worker_id}-${item.start}`, item])).values());
     uniqueSuggestions.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
 
@@ -384,7 +393,8 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
     if (morningSlots.length > 0) {
       responseLines.push('**Horarios de la mañana:**');
       for (const slot of morningSlots) {
-        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name}`);
+        // Formato de salida con worker_id: - HH:MM-HH:MM con Nombre (ID: N)
+        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name} (ID: ${slot.worker_id})`);
       }
     }
 
@@ -394,7 +404,8 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
       }
       responseLines.push('**Horarios de la tarde:**');
       for (const slot of afternoonSlots) {
-        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name}`);
+        // Formato de salida con worker_id: - HH:MM-HH:MM con Nombre (ID: N)
+        responseLines.push(`- ${slot.start}-${slot.end} con ${slot.worker_name} (ID: ${slot.worker_id})`);
       }
     }
 
@@ -409,9 +420,9 @@ export const bookAppointmentTool = new DynamicStructuredTool({
   name: "book_appointment",
   description: "Reserva una cita. Requiere cliente_id, servicio, fecha (YYYY-MM-DD), hora (HH:MM) y worker_id.",
   schema: z.object({
-    cliente_id: z.number().describe("ID del cliente"),
+    cliente_id: z.number().describe("ID del cliente. Recuerda usar la herramienta 'find_client_by_phone' para tener el cliente_id, sino tienes que hacer 'create_client'."),
     servicio: z.string().describe("Nombre del servicio"),
-    fecha: z.string().describe("Fecha de la cita en formato YYYY-MM-DD"),
+    fecha: z.string().describe("Fecha de la cita en formato YYYY-MM-DD. Si el cliente no indica el año, usa el año actual (${new Date().getFullYear()})."),
     hora: z.string().describe("Hora de inicio de la cita en formato HH:MM"),
     worker_id: z.number().optional().describe("ID del especialista, si el cliente lo especificó o si lo proporcionó una herramienta de disponibilidad"),
   }),
