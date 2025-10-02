@@ -18,7 +18,6 @@ router.post("/webhook", async (req: Request, res: Response) => {
     const clientRepo = AppDataSource.getRepository(Client);
     const agentMessageRepo = AppDataSource.getRepository(AgentMessage);
 
-    // 1. **Eliminar la lógica de creación automática del cliente**
     const client = await clientRepo.findOne({ where: { phone: sender } });
 
     // Si el cliente existe, carga el historial

@@ -15,6 +15,7 @@ interface FullClientData {
   documentId: string;
   phone: string;
   notes: string;
+  status: string;
   appointments: {
     date: string;
     status: string;
@@ -242,7 +243,12 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
           <h2 className="text-base font-medium tracking-wide leading-none text-left text-[#447F98]">
               Perfil del Cliente
           </h2>
-        </div>        
+        </div>    
+        <div className="mt-4 px-8">
+          <div className="flex flex-col px-5 py-3 mt-2 text-xs bg-[#D6EBF3] rounded-lg shadow-sm text-[#447F98] font-semibold">
+            <div>{fullClientData.status}</div>
+          </div>
+        </div>   
         <div className="flex px-8 gap-4 justify-between items-center mt-6 text-sm font-medium text-neutral-600">
           <h3 className="flex items-center gap-2">
             <span>Datos del cliente</span>
