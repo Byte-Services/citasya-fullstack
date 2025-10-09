@@ -8,7 +8,7 @@ import { Client } from '../modules/clients/client.model.js';
 import { Appointment, AppointmentStatus } from '../modules/appointments/appointment.model.js';
 import { Worker, WorkerStatus } from '../modules/workers/worker.model.js';
 import { Specialty } from '../modules/specialties/specialty.model.js';
-import { MoreThanOrEqual, Not, In } from 'typeorm';
+import { MoreThanOrEqual, Not, In, Between } from 'typeorm';
 
 //  Google Calendar
 const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || './service_account_key.json';
@@ -132,17 +132,23 @@ async function getWorkersForService(serviceId: number): Promise<Worker[]> {
 
 async function getAppointmentsForWorkersOnDate(workerIds: number[], date: Date) {
   const apptRepo = AppDataSource.getRepository(Appointment);
-  const day = new Date(date);
-  day.setHours(0, 0, 0, 0);
+
+  // Obtener rango del día completo
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
 
   const apps = await apptRepo.find({
     where: {
       worker_id: In(workerIds),
-      date: day,
-      status: Not(AppointmentStatus.Cancelado)
+      date: Between(startOfDay, endOfDay),
+      status: Not(AppointmentStatus.Cancelado),
     },
-    order: { hour: 'ASC' }
+    order: { hour: "ASC" },
   });
+
   return apps;
 }
 
@@ -463,7 +469,12 @@ export const getAvailableSlotsTool = new DynamicStructuredTool({
 // Reservar cita
 export const bookAppointmentTool = new DynamicStructuredTool({
   name: "book_appointment",
-  description: "Reserva una cita. Requiere cliente_id, servicio, fecha (YYYY-MM-DD), hora (HH:MM) y worker_id.",
+  description: `Reserva una cita para un cliente existente. 
+                Antes de usar esta herramienta:
+                - Verifica que el cliente exista con 'find_client_by_phone'.
+                - Si no existe, crea uno con 'create_client' y usa el 'cliente_id' devuelto.
+                Nunca uses un cliente_id por defecto o inventado. 
+                Requiere cliente_id, servicio, fecha (YYYY-MM-DD), hora (HH:MM) y worker_id.`,
   schema: z.object({
     cliente_id: z.number().describe("ID del cliente (usar 'find_client_by_phone' o 'create_client')."),
     servicio: z.string().describe("Nombre del servicio"),
@@ -472,6 +483,16 @@ export const bookAppointmentTool = new DynamicStructuredTool({
     worker_id: z.number().describe("ID del especialista (obtenido de 'get_available_slots')."),
   }),
   func: async ({ cliente_id, servicio, fecha, hora, worker_id }) => {
+
+    //Validación de cliente antes de continuar
+    if (!cliente_id || cliente_id === 1) {
+      const clientRepo = AppDataSource.getRepository(Client);
+      const existing = await clientRepo.findOneBy({ id: cliente_id });
+      if (!existing) {
+        throw new Error("Cliente no registrado. Debes crear el cliente antes de agendar.");
+      }
+    }
+
     const normalized = normalizeDate(fecha);
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -499,16 +520,22 @@ export const bookAppointmentTool = new DynamicStructuredTool({
       const startDateTime = new Date(`${normalized}T${hora}:00${TZ_OFFSET_CARACAS}`);
       const endDateTime = new Date(`${normalized}T${end}:00${TZ_OFFSET_CARACAS}`);
 
-      const conflict = await apptRepo.findOne({
-        where: {
-          worker_id: worker.id,
-          date: startDateTime,
-          status: Not(AppointmentStatus.Cancelado),
-          hour: hora,
-        }
-      });
-      if (conflict) return "El especialista no tiene ese horario disponible. Elige otra hora.";
+      // Validación de conflicto (más precisa)
+      const conflict = await apptRepo.createQueryBuilder("a")
+        .where("a.worker_id = :workerId", { workerId: worker.id })
+        .andWhere("DATE(a.date) = :date", { date: normalized })
+        .andWhere("a.status != :cancelled", { cancelled: AppointmentStatus.Cancelado })
+        .andWhere(
+          "( (a.hour <= :hora AND a.end_time > :hora) OR (a.hour < :end AND a.end_time >= :end) OR (:hora < a.hour AND :end > a.hour) )",
+          { hora, end }
+        )
+        .getOne();
 
+      if (conflict) {
+        await queryRunner.rollbackTransaction();
+        return "El especialista ya tiene una cita en ese horario. Por favor, elige otra hora.";
+      }
+      
       const newAppt = apptRepo.create({
         client, service, worker,
         date: startDateTime,
@@ -549,7 +576,7 @@ export const bookAppointmentTool = new DynamicStructuredTool({
 // Listar próximas citas del cliente
 export const listUserAppointmentsTool = new DynamicStructuredTool({
   name: "list_user_appointments",
-  description: "Lista citas futuras de un cliente por teléfono.",
+  description: "Lista citas futuras de un cliente por teléfono. Utiliza por defecto el número de teléfono del cliente que envió el mensaje: {sender_phone}.",
   schema: z.object({ telefono: z.string() }),
   func: async ({ telefono }) => {
     const clientRepository = AppDataSource.getRepository(Client);
@@ -579,7 +606,7 @@ export const listUserAppointmentsTool = new DynamicStructuredTool({
       const d = appointmentDate.toISOString().split('T')[0];
 
       const w = a.worker?.name ? ` con ${a.worker.name}` : '';
-      return `- #${a.id}: ${a.service.name}${w} el ${d} ${a.hour}-${a.end_time ?? ''}`;
+      return `ID: ${a.id} | Servicio: ${a.service.name}${w} | Fecha: ${d} | Hora: ${a.hour}-${a.end_time ?? ''}`;
     }).join('\n');
     return `Tus próximas citas:\n${list}`;
   }
