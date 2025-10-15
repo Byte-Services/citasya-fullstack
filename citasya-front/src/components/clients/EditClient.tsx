@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField'; 
+import { toast } from 'react-hot-toast';
 
 interface ClientData {
   id: number;
@@ -108,6 +109,8 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
       if (!response.ok) {
         throw new Error('Error al editar cliente');
       }
+      toast.success(`Datos actualizados correctamente`);
+
       onClientUpdated();
       onClose();
     } catch (err: unknown) {

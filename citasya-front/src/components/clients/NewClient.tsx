@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
-import { toast } from 'react-hot-toast/headless';
+import { toast } from 'react-hot-toast';
 
 interface NuevoClienteProps {
   onClose: () => void;

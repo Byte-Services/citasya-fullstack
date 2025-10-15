@@ -4,6 +4,7 @@ import { EditWorker } from "./EditWorker";
 import { VscEdit } from "react-icons/vsc";
 import AvailabilitySelector from "./ScheduleWorker"; // Renombrado para claridad
 import {Specialist, Availability } from '../../types/worker';
+import { toast } from "react-hot-toast";
 
 interface SpecialistProfileProps {
   specialist: Specialist | null;
@@ -36,7 +37,7 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
         const data = await res.json();
         throw new Error(data.message || "No se pudo eliminar el especialista.");
       }
-
+      toast.success("Especialista eliminado correctamente");
       onWorkerUpdated();
       setShowDeleteModal(false);
   };

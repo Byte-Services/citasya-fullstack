@@ -4,7 +4,7 @@ import React, { useState, ChangeEvent } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { UserRole, User } from '../../types/user';
-import { toast } from 'react-hot-toast/headless';
+import { toast } from 'react-hot-toast';
 
 interface NewUserProps {
   onClose: () => void;

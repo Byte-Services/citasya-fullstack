@@ -8,6 +8,7 @@ import { EliminarCliente } from "./DeleteClient";
 import { useUser } from "../../context/UserContext";
 import { VscChevronLeft, VscChevronRight } from "react-icons/vsc"; 
 import {  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
+import toast from "react-hot-toast";
 
 interface FullClientData {
   id: number;
@@ -157,7 +158,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
       const errorData = await response.json().catch(() => ({}));
       return Promise.reject(new Error(errorData.message || "No se pudo eliminar el cliente."));
     }
-
+    toast.success("Cliente eliminado exitosamente.");
     setShowDeleteModal(false);
     onCloseProfile();
   };

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { SpecialtyData, ServiceData } from '../../types/service';
+import toast from 'react-hot-toast';
 
 interface EditServiceProps {
   onClose: () => void;
@@ -74,7 +75,7 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
       });
 
       if (!response.ok) throw new Error('Error al editar el servicio');
-
+      toast.success(`Servicio ${formData.name} editado correctamente`);
       await response.json();
       onClose();
     } catch (err: unknown) {

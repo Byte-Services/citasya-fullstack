@@ -171,7 +171,7 @@ const Services: React.FC = () => {
               setDeletingErrorMessage(errorData.error || 'Error al eliminar el servicio.');
               return; // Detenemos la ejecución aquí
           }
-
+          toast.success("Servicio eliminado correctamente");
           // Si la eliminación fue exitosa (código 204), limpiamos el error
           setDeletingErrorMessage(null);
           handleCloseDeleteModal();

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from '../InputField';
+import { toast } from 'react-hot-toast';
 
 interface SpecialistData {
   id: string;
@@ -128,7 +129,7 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
         setLoading(false);
         return;
       }
-
+      toast.success(`Especialista ${formData.name} editado correctamente`);
       onClose();
       if (onSaveSuccess) onSaveSuccess();
     } catch (err) {

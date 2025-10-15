@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField, SelectOption } from '../InputField';
-import { toast } from 'react-hot-toast/headless';
+import { toast } from 'react-hot-toast';
 
 interface NewAppointmentProps {
   onClose: () => void;
