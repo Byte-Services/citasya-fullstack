@@ -61,6 +61,10 @@ export class DashboardController {
         }
     }
 
+    /**
+     * Obtiene los datos del gráfico de ingresos en un rango de fechas.
+     * @return JSON con los datos de ingresos por fecha o un mensaje de error.
+     */
     async getRevenueChartData(req: Request, res: Response): Promise<Response> {
         try {
             const { startDate, endDate } = req.query;

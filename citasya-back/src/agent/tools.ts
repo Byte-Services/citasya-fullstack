@@ -520,7 +520,6 @@ export const bookAppointmentTool = new DynamicStructuredTool({
       const startDateTime = new Date(`${normalized}T${hora}:00${TZ_OFFSET_CARACAS}`);
       const endDateTime = new Date(`${normalized}T${end}:00${TZ_OFFSET_CARACAS}`);
 
-      // Validación de conflicto (más precisa)
       const conflict = await apptRepo.createQueryBuilder("a")
         .where("a.worker_id = :workerId", { workerId: worker.id })
         .andWhere("DATE(a.date) = :date", { date: normalized })
@@ -562,7 +561,7 @@ export const bookAppointmentTool = new DynamicStructuredTool({
 
       await queryRunner.commitTransaction();
 
-      return `✅ Cita agendada:\n• Cliente: ${client.name}\n• Servicio: ${service.name}\n• Especialista: ${worker.name}\n• Fecha: ${normalized}\n• Hora: ${hora}-${end}\n• Precio: ${service.price} USD\n• ID cita: ${newAppt.id}`;
+      return `Cita agendada:\n• Cliente: ${client.name}\n• Servicio: ${service.name}\n• Especialista: ${worker.name}\n• Fecha: ${normalized}\n• Hora: ${hora}-${end}\n• Precio: ${service.price} USD\n• ID cita: ${newAppt.id}`;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
       return `Error al reservar la cita: ${err.message}`;
@@ -632,7 +631,7 @@ export const cancelAppointmentTool = new DynamicStructuredTool({
           console.warn("No se pudo eliminar el evento de Calendar (quizá ya no existe).", e);
         }
       }
-      return `✅ Cita ${citaId} cancelada.`;
+      return ` Cita ${citaId} cancelada.`;
     } catch (e) {
       return `Error al cancelar la cita ${citaId}.`;
     }

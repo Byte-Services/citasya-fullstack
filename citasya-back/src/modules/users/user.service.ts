@@ -11,16 +11,13 @@ export const createUserService = async (data: {
   password: string;
   role: UserRole;
 }) => {
-  // Validar si ya existe usuario con ese correo
   const existingUser = await userRepository.findOneBy({ email: data.email });
   if (existingUser) {
     throw new Error("El correo ya está registrado");
   }
 
-  // Hashear contraseña
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  // Crear instancia de usuario
   const newUser = userRepository.create({
     name: data.name,
     email: data.email,
@@ -30,7 +27,6 @@ export const createUserService = async (data: {
     is_active: true,
   });
 
-  // Guardar en la BD
   await userRepository.save(newUser);
 
   return newUser;

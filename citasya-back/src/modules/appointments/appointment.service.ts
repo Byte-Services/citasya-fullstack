@@ -117,12 +117,12 @@ export class AppointmentsService {
             const startDate = new Date(year, month - 1, day, hour, minute);
             const serviceDuration = service?.minutes_duration || 60;
             const endDate = new Date(startDate.getTime() + serviceDuration * 60 * 1000);
-            const end_time = endDate.toTimeString().slice(0, 5); // formato "HH:MM"
+            const end_time = endDate.toTimeString().slice(0, 5); 
 
             const appointment = this.appointmentRepository.create({
                 date: localDate,
                 hour: data.hour,
-                end_time, // <--- aquí se guarda
+                end_time, 
                 status: AppointmentStatus.Pendiente,
                 client,
                 service,
@@ -159,10 +159,9 @@ export class AppointmentsService {
 
                 if (calendarResponse.data.id) {
                 savedAppointment.calendar_event_id = calendarResponse.data.id;
-                await queryRunner.manager.save(savedAppointment); // actualizar con google_event_id
+                await queryRunner.manager.save(savedAppointment); 
                 }
             } catch (calendarError) {
-                // No revertimos la transacción de BD si falla Google Calendar
             }
 
             await queryRunner.commitTransaction();
@@ -199,9 +198,8 @@ export class AppointmentsService {
                 calendarId: CALENDAR_ID,
                 eventId: appointment.calendar_event_id,
             });
-            appointment.calendar_event_id = ''; // limpiar el eventId
+            appointment.calendar_event_id = ''; 
             } catch (err) {
-                // No hacer nada si falla la eliminación en Google Calendar
             }
         }
 

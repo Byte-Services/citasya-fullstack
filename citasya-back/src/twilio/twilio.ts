@@ -16,11 +16,8 @@ export async function sendWhatsAppMessage(sender: string, message: string): Prom
       body: message,
       to: `whatsapp:+${sender}`
     });
-    console.log('Mensaje enviado a:', sender);
   } catch (error: any) {
-    console.error('Error enviando mensaje:', error);
     if (error.status) {
-        console.error(`Código de error Twilio: ${error.status}`);
     }
     throw error;
   }

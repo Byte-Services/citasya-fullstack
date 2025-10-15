@@ -144,7 +144,6 @@ export class DashboardService {
 
         const revenueMap: Record<string, number> = {};
 
-        // Si start y end son el mismo día => agrupamos por hora
         const sameDay = start.toDateString() === end.toDateString();
         appointments.forEach((appt) => {
         const amount = Number(appt.service?.price ?? 0);
@@ -153,21 +152,17 @@ export class DashboardService {
         if (sameDay) {
             key = appt.hour ? appt.hour.toString().slice(0, 5) : "00:00";
         } else {
-            // ✅ Usa la fecha en Caracas, no en UTC
             key = this.formatDateCaracas(new Date(appt.date));
         }
 
         revenueMap[key] = (revenueMap[key] || 0) + amount;
         });
 
-
-
         const result = Object.entries(revenueMap).map(([key, total]) => ({
             date: key,
             total,
         }));
 
-        // ordenar cronológicamente (si es por hora => lexicográfico funciona, si es fecha => new Date)
         result.sort((a, b) => {
             if (sameDay) return a.date.localeCompare(b.date);
             return new Date(a.date).getTime() - new Date(b.date).getTime();

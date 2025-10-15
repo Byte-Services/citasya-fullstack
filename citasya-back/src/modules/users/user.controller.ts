@@ -28,8 +28,6 @@ export const loginUser = async (req: Request, res: Response) => {
       process.env.JWT_SECRET || "secret",
       { expiresIn: "8h" }
     );
-    console.log("✅ Token generado:", token);
-
 
     return res.json({ token, user });
   } catch (error) {
@@ -53,7 +51,6 @@ export const createUser = async (req: Request, res: Response) => {
 
     return res.status(201).json({ message: "Usuario creado correctamente", user: newUser });
   } catch (error: any) {
-    console.error("❌ Error al crear usuario:", error);
     return res.status(500).json({ message: error.message || "Error al crear usuario" });
   }
 };
@@ -77,7 +74,6 @@ export const updateUser = async (req: Request, res: Response) => {
 
     return res.json({ message: "Usuario actualizado correctamente", user });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: "Error al actualizar usuario", error });
   }
 };

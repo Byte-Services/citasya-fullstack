@@ -36,14 +36,16 @@ export class ClientController {
                 return;
             }
 
-            // Aquí agregar la lógica para calcular el total invertido
-
             res.status(200).json(client);
         } catch (error) {
             res.status(500).json({ message: "Error al obtener el perfil del cliente." });
         }
     }
 
+    /**
+     * Busca un cliente por su número de documento (cédula).
+     * @return JSON con el cliente encontrado o null si no existe.
+     */
     async getClientByDocumentId(req: Request, res: Response): Promise<void> {
         try {
             const { documentId } = req.params;
