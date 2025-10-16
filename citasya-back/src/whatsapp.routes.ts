@@ -19,8 +19,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
     const clientRepo = AppDataSource.getRepository(Client);
     const agentMessageRepo = AppDataSource.getRepository(AgentMessage);
 
-    // Buscar cliente existente
-    const client = await clientRepo.findOne({ where: { phone: sender } });
+    const client = await clientRepo.findOne({ where: { phone: sender } });
 
     // Cargar historial si existe cliente
     const historyMessages = client
