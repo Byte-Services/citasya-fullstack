@@ -95,24 +95,26 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
   ];
 
   return (
-    <main className="max-w-[679px]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <div className="flex flex-col py-9 w-full bg-neutral-100 rounded-[30px] shadow-lg">
-        <header className="flex flex-col self-end mr-11 text-4xl font-medium leading-none text-center text-stone-400 w-[404px]">
-          <button
-            onClick={onClose}
-            aria-label="Cerrar modal"
-            className="self-end w-[25px] h-[25px] cursor-pointer"
-          >
-            <VscChromeClose className="text-neutral-600 hover:text-neutral-800 transition-colors" />
-          </button>
-          <h1 className="self-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed' }}>Editar Servicio</h1>
+    <main className="max-w-[679px] w-full mx-4 sm:mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
+      <div className="flex flex-col py-6 sm:py-9 w-full bg-neutral-100 rounded-[15px] sm:rounded-[30px] shadow-lg max-h-[95vh] overflow-y-auto">
+        <header className="flex flex-col px-4 sm:px-10 self-stretch text-xl sm:text-4xl font-medium leading-none text-center text-stone-400">
+          <div className="flex justify-between items-start mb-4 sm:mb-0">
+            <h1 className="text-[#447F98] text-2xl sm:text-4xl" style={{ fontFamily: 'Roboto Condensed' }}>Editar Servicio</h1>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar modal"
+              className="w-[30px] h-[30px] cursor-pointer self-start"
+            >
+              <VscChromeClose className="text-2xl sm:text-4xl text-neutral-600 hover:text-neutral-800 transition-colors" />
+            </button>
+          </div>
         </header>
 
-        <form className="flex flex-col px-10 mt-4 w-full text-neutral-600">
+        <form className="flex flex-col px-4 sm:px-10 mt-4 w-full text-neutral-600">
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-          <div className="flex flex-wrap gap-10">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-10">
+            <div className="flex-1 min-w-full sm:min-w-0">
               <ServiceFormField
                 label="Nombre del servicio:"
                 placeholder="Ingresa nombre..."
@@ -120,10 +122,10 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
                 value={formData.name}
                 onChange={handleChange}
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-full sm:min-w-0">
               <ServiceFormField
                 label="Especialidad:"
                 placeholder="Selecciona una especialidad"
@@ -132,11 +134,11 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
                 value={formData.specialty_id}
                 onChange={handleChange}
               />
-              {errors.specialty_id && <p className="text-red-500 text-sm">{errors.specialty_id}</p>}
+              {errors.specialty_id && <p className="text-red-500 text-sm mt-1">{errors.specialty_id}</p>}
             </div>
           </div>
 
-          <div className="mt-2">
+          <div className="mt-4 sm:mt-2">
             <ServiceFormField
               label="Descripción"
               placeholder="Escribe una descripción del servicio..."
@@ -145,11 +147,11 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
               value={formData.description}
               onChange={handleChange}
             />
-            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
           </div>
 
-          <div className="flex flex-wrap gap-10 mt-2">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-10 mt-4 sm:mt-2">
+            <div className="flex-1 min-w-full sm:min-w-0">
               <ServiceFormField
                 label="Duración (min):"
                 placeholder="Ej: 60"
@@ -158,10 +160,10 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
                 value={formData.minutes_duration}
                 onChange={handleChange}
               />
-              {errors.minutes_duration && <p className="text-red-500 text-sm">{errors.minutes_duration}</p>}
+              {errors.minutes_duration && <p className="text-red-500 text-sm mt-1">{errors.minutes_duration}</p>}
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-full sm:min-w-0">
               <ServiceFormField
                 label="Precio ($):"
                 placeholder="Ej: 50.00"
@@ -170,11 +172,11 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
                 value={formData.price}
                 onChange={handleChange}
               />
-              {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+              {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-10 mt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-10 mt-4 sm:mt-2">
             <ServiceFormField
               label="Estado:"
               placeholder="Selecciona un estado"
@@ -188,7 +190,7 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
           <button
             onClick={handleEditService}
             type="button"
-            className="self-center px-11 py-5 mt-10 text-base font-bold text-white bg-[#447F98] rounded-[40px] hover:bg-[#629BB5] transition-colors"
+            className="self-center px-8 py-3 sm:px-11 sm:py-5 mt-6 sm:mt-10 text-base font-bold text-white bg-[#447F98] rounded-[40px] hover:bg-[#629BB5] transition-colors w-full sm:w-auto"
             disabled={loading}
           >
             {loading ? 'Guardando...' : 'Guardar'}

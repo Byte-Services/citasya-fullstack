@@ -261,9 +261,8 @@ const Services: React.FC = () => {
   });
 
   return (
-    <>
-      <main className="relative w-full min-h-screen px-30 max-md:px-8 max-sm:px-4 bg-[#F9FAFB]">
-          <h1 className="mx-0 mb-8 pt-8 text-4xl font-semibold text-center max-sm:mx-0 max-sm:my-8 max-sm:text-3xl" style={{ fontFamily: 'Roboto Condensed, sans-serif', color: "#447F98", }}>
+      <div className="relative w-full min-h-screen px-30 max-md:px-8 max-sm:px-4 bg-[#F9FAFB]">
+          <h1 className="mx-0 mb-8 pt-8 text-4xl font-semibold text-center max-sm:mx-0 max-sm:py-8 max-sm:text-3xl" style={{ fontFamily: 'Roboto Condensed, sans-serif', color: "#447F98", }}>
             Servicios
           </h1>
         {/* Nuevo diseño de filtros y botón */}
@@ -314,7 +313,7 @@ const Services: React.FC = () => {
         />
 
         <div className="mb-50" />
-      </main>
+
 
       {/* Renderizado condicional del modal de nuevo servicio */}
       {showNewModal && (
@@ -344,17 +343,17 @@ const Services: React.FC = () => {
       {/* Modal para administrar especialidades */}
       {showManageSpecialtyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif'}}>
-            <div className="relative w-fit max-w-3xl p-14 rounded-xl shadow-2xl bg-neutral-100">
+          <div className="relative w-full max-w-sm mx-4 p-6 sm:p-8 rounded-xl shadow-2xl bg-neutral-100">
             <button
               className="absolute top-2 right-2 text-2xl text-neutral-500 hover:text-neutral-900"
               onClick={handleCloseManageSpecialtyModal}
             >
-              <VscChromeClose className="mr-4 mt-4 text-neutral-600 hover:text-neutral-800 transition-colors duration-200" />
+              <VscChromeClose className="mr-2 mt-2 text-xl sm:text-2xl text-neutral-600 hover:text-neutral-800 transition-colors duration-200" />
             </button>
             <h2 className="text-2xl font-medium mb-4 text-center text-[#447F98]" >
               Administrar Especialidades
             </h2>
-            <div className="max-h-60 overflow-y-auto">
+            <div className="max-h-[25vh] overflow-y-auto pr-1">
               {loadingSpecialties ? (
                 <p className="text-center text-neutral-600">Cargando especialidades...</p>
               ) : specialtiesError ? (
@@ -400,7 +399,7 @@ const Services: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
