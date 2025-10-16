@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { ServiceFormField } from '../../components/InputField';
 import { AppointmentsTable } from '../../components/appointments/AppointmentsTable';
@@ -69,8 +68,8 @@ const Appointments: React.FC = () => {
       const workersData: Worker[] = await res.json();
       const workerOptions = [{ label: 'Todos', value: '' }, ...workersData.map(w => ({ label: w.name, value: w.name }))];
       setWorkersForFilter(workerOptions);
-    } catch (err) {
-      console.error('Error fetching workers:', err);
+    } catch {
+      setWorkersForFilter(prev => prev); 
     }
   }, [API_BASE]);
 
@@ -82,8 +81,8 @@ const Appointments: React.FC = () => {
       const servicesData: Service[] = await res.json();
       const serviceOptions = [{ label: 'Todos', value: '' }, ...servicesData.map(s => ({ label: s.name, value: s.name }))];
       setServicesForFilter(serviceOptions);
-    } catch (err) {
-      console.error('Error fetching services:', err);
+    } catch {
+      setServicesForFilter(prev => prev); 
     }
   }, [API_BASE]);
 
@@ -101,14 +100,8 @@ const Appointments: React.FC = () => {
 
       const appointmentsData = await appointmentsRes.json();
       setAppointments(appointmentsData);
-      
-      // Procesar los servicios únicos para el filtro
-      //const uniqueServices = Array.from(new Set(appointmentsData.map((a: Appointment) => String(a.service.name))));
-      //const newServiceOptions = [{ label: 'Todos', value: '' }, ...uniqueServices.map(service => ({ label: String(service), value: String(service) }))];
-      //setServicesForFilter(newServiceOptions);
 
     } catch (err: unknown) {
-      console.error('Error fetching data:', err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -128,15 +121,10 @@ const Appointments: React.FC = () => {
 
   // Lógica de filtrado de citas
   const filteredAppointments = appointments.filter(appointment => {
-    // Filtro por estado  
     const statusMatch = selectedStatus === '' || appointment.status.toLowerCase() === selectedStatus.toLowerCase();
-    // Filtro por especialista (usando el nombre del objeto anidado)
     const especialistaMatch = selectedEspecialista === '' || (appointment.worker?.name ?? '').toLowerCase() === selectedEspecialista.toLowerCase();
-    // Filtro por servicio (usando el nombre del objeto anidado)
     const serviceMatch = selectedService === '' || appointment.service.name.toLowerCase() === selectedService.toLowerCase();
-    // Filtro por término de búsqueda (cliente)
     const searchMatch = searchTerm === '' || appointment.client.name.toLowerCase().includes(searchTerm.toLowerCase());
-    // Filtro por fecha
     const dateMatch = date === '' || appointment.date === date;
 
     return statusMatch && especialistaMatch && serviceMatch && searchMatch && dateMatch;
@@ -159,13 +147,12 @@ const Appointments: React.FC = () => {
 
       const updatedAppointment = await res.json();
 
-      // Actualizar el estado local para reflejar el cambio en la tabla
       setAppointments(prev =>
         prev.map(a => (a.id === updatedAppointment.id ? updatedAppointment : a))
       );
 
-    } catch (error) {
-      console.error('Error actualizando estado:', error);
+    } catch {
+      setError('Error actualizando estado');
     }
   };
 
@@ -309,7 +296,7 @@ const Appointments: React.FC = () => {
         <div className="pb-15" />
       </main>
 
-      {/* Renderizado condicional del modal de nuevo servicio */}
+      {/* Modal de nuevo servicio */}
         {showNewModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
             <NewAppointment onClose={handleCloseNewModal} />

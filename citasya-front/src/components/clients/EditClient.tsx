@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField'; 
+import { toast } from 'react-hot-toast';
 
 interface ClientData {
   id: number;
@@ -47,12 +48,9 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
   };
 
   const validateForm = () => {
-    // Validar nombre
     if (!formData.nombre.trim()) {
       return "El nombre es obligatorio.";
     }
-
-    // Validar cédula
     const cedulaRegex = /^\d{1,8}$/;
     if (!formData.cedula.trim()) {
       return "El campo cédula es obligatorio.";
@@ -63,8 +61,6 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
     if (!cedulaRegex.test(formData.cedula)) {
       return "La cédula debe tener exactamente 8 números.";
     }
-
-    // Validar teléfono (formato input: 0414xxxxxxx)
     if (!formData.telefono.trim()) {
       return "El campo teléfono es obligatorio.";
     }
@@ -80,7 +76,6 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
     setLoading(true);
     setError(null);
 
-    // Validar antes de enviar
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -88,7 +83,6 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
       return;
     }
 
-    // Transformar teléfono de 0414xxxxxxx → 58414xxxxxxx
     const formattedPhone = formData.telefono.replace(/^0/, "58");
 
     const clientUpdateData = {
@@ -108,12 +102,13 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
       if (!response.ok) {
         throw new Error('Error al editar cliente');
       }
+      toast.success(`Datos actualizados correctamente`);
+
       onClientUpdated();
       onClose();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error inesperado.';
       setError(errorMessage);
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -122,10 +117,9 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
   const formatPhone = (phone: string) => {
     if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
 
-    const area = phone.slice(2, 5);       // "414"
-    const number = phone.slice(5);        // "3252123"
-
-    return `0${area}${number}`;          // "0414-3252123"
+    const area = phone.slice(2, 5);       
+    const number = phone.slice(5);        
+    return `0${area}${number}`;          
   };
 
   return ReactDOM.createPortal(

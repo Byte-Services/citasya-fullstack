@@ -137,7 +137,6 @@ export class AppointmentsController {
         const serviceDuration = service.minutes_duration ?? 30;
 
         const queryDate = new Date(date as string);
-        // Normalizamos queryDate a 00:00:00 por si acaso
         queryDate.setHours(0, 0, 0, 0);
 
         const dayOfWeek = new Date(`${date}T00:00:00-04:00`).toLocaleDateString("en-US", { weekday: "short" });
@@ -156,9 +155,8 @@ export class AppointmentsController {
         for (let t = new Date(start); t < end; t.setMinutes(t.getMinutes() + 15)) {
           slots.push(t.toTimeString().slice(0, 5));
         }
-        console.log("Slots generados:", slots);
 
-        // Filtrar citas del mismo día y con estado relevante
+        // Filtrar citas del mismo día y con estado activo (Pendiente, Confirmado)
         const sameDayAppointments = (worker.appointments || []).filter((a: Appointment) => {
           const appointmentDate = new Date(a.date);
           appointmentDate.setHours(0, 0, 0, 0);
@@ -168,13 +166,10 @@ export class AppointmentsController {
           );
         });
 
-        console.log("Citas del día (start-end):", sameDayAppointments.map(a => `${a.hour}-${a.end_time ?? 'no-end'}`));
-
         // Generar slots ocupados (por 15 min) a partir de las citas del día
         const allTakenSlots: string[] = [];
         sameDayAppointments.forEach((a: Appointment) => {
           const startDateTime = new Date(`${date}T${a.hour}`);
-          // Si no hay end_time, intentar calcular usando appointment.service.minutes_duration o fallback 30
           let endDateTime: Date;
           if (a.end_time) {
             endDateTime = new Date(`${date}T${a.end_time}`);
@@ -190,7 +185,6 @@ export class AppointmentsController {
         });
 
         let available = slots.filter(slot => !allTakenSlots.includes(slot));
-        console.log("Después de quitar ocupados:", available);
 
         // Excluir horario de descanso solo si es válido y distinto de 'none'
         if (
@@ -207,14 +201,13 @@ export class AppointmentsController {
             return !(slotDate.getTime() >= breakStartDate.getTime() && slotDate.getTime() < breakEndDate.getTime());
           });
         }
-        console.log("Después de quitar break:", available);
 
-        // Validar que quepa el servicio completo en ese slot (usando solo sameDayAppointments)
+        // Validar que quepa el servicio completo en ese slot 
         available = available.filter(slot => {
           const slotStart = new Date(`${date}T${slot}`);
           const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
 
-          // Permitir que termine exactamente en endTime (igual está permitido)
+          // Permitir que termine exactamente en endTime 
           if (slotEnd.getTime() > end.getTime()) return false;
 
           // Chequear solapamiento con citas del mismo día
@@ -238,11 +231,9 @@ export class AppointmentsController {
           return true;
         });
 
-        console.log("Después de validar duración:", available);
 
         return res.json({ slots: available });
       } catch (err) {
-        console.error(err);
         return res.status(500).json({ error: "Error obteniendo horarios disponibles" });
       }
     }

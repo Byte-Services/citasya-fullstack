@@ -45,9 +45,8 @@ router.post("/webhook", async (req: Request, res: Response) => {
 
     botResponse = response.output;
 
-    // Detectar si el agente confirmó una cita, resetear historial
     const bookingKeywords = [
-      "✅ Cita agendada",
+      "Cita agendada",
       "Tu cita ha sido confirmada",
       "Reserva completada",
       "Tu cita para el servicio de",

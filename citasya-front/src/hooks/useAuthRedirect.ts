@@ -9,7 +9,7 @@ export const useAuthRedirect = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (loading) return; // esperar a que cargue
+    if (loading) return; 
     if (!user && pathname !== "/") {
       router.push("/");
     }

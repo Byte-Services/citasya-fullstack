@@ -4,15 +4,24 @@ import React, { useState } from 'react';
 import { ServiceFormField } from '../InputField';
 import { VscChromeClose } from "react-icons/vsc";
 import { SpecialtyData } from '../../types/service';
-import { toast } from 'react-hot-toast/headless';
+import { toast } from 'react-hot-toast';
 
 interface NewServiceProps {
   onClose: () => void;
   specialties: SpecialtyData[];
 }
 
+type FormDataType = {
+  name: string;
+  specialty_id: string;
+  description: string;
+  minutes_duration: string;
+  price: string;
+  status: string;
+};
+
 export const NewService: React.FC<NewServiceProps> = ({ onClose, specialties }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     name: '',
     specialty_id: '', 
     description: '',
@@ -28,13 +37,28 @@ export const NewService: React.FC<NewServiceProps> = ({ onClose, specialties }) 
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.name.trim()) newErrors.name = "El nombre es obligatorio";
-    if (!formData.specialty_id) newErrors.specialty_id = "La especialidad es obligatoria";
-    if (!formData.description.trim()) newErrors.description = "La descripción es obligatoria";
-    if (!formData.minutes_duration) newErrors.minutes_duration = "La duración es obligatoria";
-    if (!formData.price) newErrors.price = "El precio es obligatorio";
+
+    if (formData.minutes_duration && (!/^\d+$/.test(formData.minutes_duration) || parseInt(formData.minutes_duration, 10) <= 0)) {
+      newErrors.minutes_duration = "La duración debe ser un número entero mayor que 0";
+    }
+    if (formData.price && (isNaN(Number(formData.price)) || Number(formData.price) <= 0)) {
+      newErrors.price = "El precio debe ser un número mayor que 0";
+    }
+
+    const requiredFields: (keyof FormDataType)[] = ['name', 'specialty_id', 'description', 'minutes_duration', 'price'];
+    const hasEmptyRequired = requiredFields.some((field) => {
+      const value = formData[field];
+      return value === undefined || value === null || String(value).trim() === '';
+    });
 
     setErrors(newErrors);
+
+    if (hasEmptyRequired) {
+      setError('Todos los campos son obligatorios');
+      return false;
+    }
+
+    setError(null);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -179,7 +203,7 @@ export const NewService: React.FC<NewServiceProps> = ({ onClose, specialties }) 
           />
 
           {(error || Object.keys(errors).length > 0) && (
-            <div className="mt-6 px-4 py-3 bg-red-100 text-red-700 rounded-md">
+            <div className="mt-6 px-4 py-3 text-red-700 rounded-md">
               <ul className="text-sm list-disc list-inside space-y-1">
                 {error && <li>{error}</li>}
                 {Object.entries(errors).map(([key, msg]) => (

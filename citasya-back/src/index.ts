@@ -39,7 +39,6 @@ const PORT = process.env.PORT || 3000;
 
 AppDataSource.initialize()
     .then(() => {
-        console.log("Data Source has been initialized!");
 
         app.use('/whatsapp', whatsappRoutes);
         app.use('/admin/specialties', specialtyRoutes);

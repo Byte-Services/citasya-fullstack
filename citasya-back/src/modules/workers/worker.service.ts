@@ -108,7 +108,6 @@ export class WorkerService {
 
     const appointments = worker.appointments ?? [];
 
-    // Si hay alguna pendiente o confirmada -> no borrar
     const hasActiveAppointments = appointments.some(
       (appt) => appt?.status === "Pendiente" || appt?.status === "Confirmado"
     );
@@ -121,10 +120,9 @@ export class WorkerService {
       };
     }
 
-    // Si todas son Concluidas o Canceladas, liberamos la FK antes de borrar
     if (appointments.length > 0) {
       for (const appt of appointments) {
-        appt.worker = null as any; // o appt.worker_id = null si lo manejas manual
+        appt.worker = null as any; 
       }
       await AppDataSource.getRepository(Appointment).save(appointments);
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VscCheck, VscChromeClose } from 'react-icons/vsc';
 import {Availability } from '../../types/worker';
+import toast from 'react-hot-toast';
 
 interface AvailabilitySelectorProps {
   onSave: (availability: Availability) => void;
@@ -55,8 +56,27 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({ onSave, onC
     }));
   };
 
+  const isTimeBefore = (start: string, end: string): boolean => {
+    if (!start || !end) return false;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    if (Number.isNaN(sh) || Number.isNaN(sm) || Number.isNaN(eh) || Number.isNaN(em)) return false;
+    return sh < eh || (sh === eh && sm < em);
+  };
+
   const handleSaveClick = () => {
+    for (const key of Object.keys(currentAvailability.days) as (keyof Availability['days'])[]) {
+      const day = currentAvailability.days[key];
+      if (day.enabled) {
+        if (!isTimeBefore(day.startTime, day.endTime)) {
+          toast.error(`La hora de inicio debe ser menor que la hora de fin para ${dayLabels[key] ?? key}`);
+          return;
+        }
+      }
+    }
+
     onSave(currentAvailability);
+    toast.success("Horario actualizado correctamente");
   };
 
   return (

@@ -8,6 +8,7 @@ import { EliminarCliente } from "./DeleteClient";
 import { useUser } from "../../context/UserContext";
 import { VscChevronLeft, VscChevronRight } from "react-icons/vsc"; 
 import {  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
+import toast from "react-hot-toast";
 
 interface FullClientData {
   id: number;
@@ -41,7 +42,6 @@ interface CustomTooltipProps {
 }
 
 
-
 interface ClientProfileProps {
   clientId: number;
   onCloseProfile: () => void;
@@ -73,10 +73,8 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError("Error al cargar el perfil del cliente: " + e.message);
-        console.error("Error fetching client profile:", e);
       } else {
         setError("Error desconocido al cargar el perfil del cliente.");
-        console.error("Unknown error fetching client profile:", e);
       }
     } finally {
       setLoading(false);
@@ -87,7 +85,6 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
     fetchClientProfile();
   }, [clientId, fetchClientProfile]);
 
-  // --- Transformar citas concluidas a dataset mensual ---
   const monthlyData: MonthlyData[] = React.useMemo(() => {
     const grouped: { [key: string]: { citas: number; total: number } } = {};
 
@@ -123,8 +120,6 @@ export default function ClientProfile({ clientId, onCloseProfile }: ClientProfil
   }, [fullClientData]);
 
 
-
-// --- Custom tooltip para mostrar dinero invertido ---
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -158,7 +153,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
       const errorData = await response.json().catch(() => ({}));
       return Promise.reject(new Error(errorData.message || "No se pudo eliminar el cliente."));
     }
-
+    toast.success("Cliente eliminado exitosamente.");
     setShowDeleteModal(false);
     onCloseProfile();
   };
@@ -364,7 +359,6 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
             </tbody>
           </table>
           
-          {/* Controles de paginación con flechas */}
           {allAppointments.length > appointmentsPerPage && (
             <div className="flex justify-center items-center mt-4 space-x-2">
               <button

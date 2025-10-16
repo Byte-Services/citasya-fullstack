@@ -17,18 +17,13 @@ interface Client {
 }
 
 export function ClientDirectory() {
-  // Estados para la data de la API
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Estados para modales y selección
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [appointmentClient, setAppointmentClient] = useState<Client | null>(null);
-
-  // Estados para los inputs de búsqueda
   const [searchNameOrCedula, setSearchNameOrCedula] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
 
@@ -56,10 +51,8 @@ export function ClientDirectory() {
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError("Error al cargar los clientes: " + e.message);
-        console.error("Error fetching clients:", e);
       } else {
         setError("Error al cargar los clientes: error desconocido");
-        console.error("Error fetching clients:", e);
       }
     } finally {
       setLoading(false);
@@ -72,15 +65,11 @@ export function ClientDirectory() {
 
   const normalizePhone = (phone: string) => {
     if (!phone) return "";
-    // Eliminar todo lo que no sea número
     let digits = phone.replace(/\D/g, "");
-
-    // Si el número tiene 11 dígitos y empieza con 0 → convertir a 58XXXXXXXXXX
     if (digits.length === 11 && digits.startsWith("0")) {
       digits = "58" + digits.slice(1);
     }
 
-    // Dejar números más cortos como están para que includes funcione
     return digits;
   };
 
@@ -88,7 +77,6 @@ export function ClientDirectory() {
     if (!input) return "";
     let digits = input.replace(/\D/g, "");
 
-    // Si empieza con 0 y tiene menos de 12 dígitos, asumir código nacional
     if (digits.startsWith("0")) {
       digits = "58" + digits.slice(1);
     }
@@ -136,10 +124,10 @@ export function ClientDirectory() {
   const formatPhone = (phone: string) => {
   if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
 
-  const area = phone.slice(2, 5);       // "414"
-  const number = phone.slice(5);        // "3252123"
+  const area = phone.slice(2, 5);       
+  const number = phone.slice(5);        
 
-  return `0${area}-${number}`;          // "0414-3252123"
+  return `0${area}-${number}`;
 };
 
 
@@ -185,7 +173,6 @@ export function ClientDirectory() {
             </div>
           </div>
 
-          {/* Estado de carga y error */}
           {loading && <div className="p-5 text-center">Cargando clientes...</div>}
           {error && <div className="p-5 text-center text-red-500">{error}</div>}
           {!loading && !error && (

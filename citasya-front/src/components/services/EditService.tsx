@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { SpecialtyData, ServiceData } from '../../types/service';
+import toast from 'react-hot-toast';
 
 interface EditServiceProps {
   onClose: () => void;
@@ -51,7 +52,7 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
     const { name, value } = e.target;
     if (!name) return;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: "" })); // limpiar error al escribir
+    setErrors(prev => ({ ...prev, [name]: "" })); 
   };
 
   const handleEditService = async () => {
@@ -74,13 +75,12 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
       });
 
       if (!response.ok) throw new Error('Error al editar el servicio');
-
+      toast.success(`Servicio ${formData.name} editado correctamente`);
       await response.json();
       onClose();
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
-        console.error('Failed to edit service:', err);
       } else {
         setError('Error desconocido al editar el servicio');
       }

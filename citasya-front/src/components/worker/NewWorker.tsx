@@ -41,8 +41,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
           label: specialty.name,
         }));
         setAvailableSpecialties(formattedSpecialties);
-      } catch (err) {
-        console.error('Failed to fetch specialties:', err);
+      } catch {
         setError('No se pudieron cargar las especialidades. Inténtalo de nuevo.');
       }
     };
@@ -72,8 +71,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
             label: service.name,
           }));
           setAvailableServices(formattedServices);
-        } catch (err) {
-          console.error('Failed to fetch services:', err);
+        } catch {
           setError('No se pudieron cargar los servicios. Inténtalo de nuevo.');
         }
       };

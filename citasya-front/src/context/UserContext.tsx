@@ -18,7 +18,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // <-- NUEVO
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
@@ -29,7 +29,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(JSON.parse(savedUser));
     }
 
-    setLoading(false); // <-- ya terminó de evaluar
+    setLoading(false); 
   }, []);
 
   const login = async (email: string, password: string, router: AppRouterInstance | NextRouter) => {
@@ -51,8 +51,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
-
-    console.log("🔑 Token recibido en frontend:", data.token);
 
     if (data.user.role === "Coordinator") {
       router.push("/appointments");

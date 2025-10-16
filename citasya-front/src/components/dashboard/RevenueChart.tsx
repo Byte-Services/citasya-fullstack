@@ -1,4 +1,3 @@
-// components/dashboard/RevenueChart.tsx
 "use client";
 import * as React from "react";
 import {
@@ -12,7 +11,7 @@ import {
 } from "recharts";
 
 interface RevenueData {
-  date: string; // "YYYY-MM-DD" o "HH:MM"
+  date: string; 
   total: number;
 }
 
@@ -49,7 +48,6 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/dashboard/dashboard-revenue?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
         );
         const json = await res.json();
-        console.log("📊 Ingresos:", json);
 
         if (!res.ok) {
           setError(json?.message || "Error al obtener ingresos");
@@ -63,15 +61,13 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
           total: Number(it.total ?? it.totalAmount ?? 0),
         }));
 
-        // ordenar por fecha/hora si no llega ordenado
         normalized.sort((a, b) => {
-          if (sameDay) return a.date.localeCompare(b.date); // "HH:MM"
+          if (sameDay) return a.date.localeCompare(b.date);
           return new Date(a.date).getTime() - new Date(b.date).getTime();
         });
 
         if (mounted) setData(normalized);
-      } catch (err) {
-        console.error("Error al cargar ingresos", err);
+      } catch {
         if (mounted) {
           setError("Error al cargar ingresos");
           setData([]);
@@ -90,7 +86,7 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
   if (data.length === 0) return <p className="text-sm text-gray-500 p-4">No hay ingresos en este período.</p>;
 
     const xTickFormatter = (val: string) => {
-    if (sameDay) return val; // "HH:MM"
+    if (sameDay) return val;
 
     try {
         const [year, month, day] = val.split("-");
@@ -101,7 +97,7 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-        }).format(d); // => "27/09/2025"
+        }).format(d); 
     } catch {
         return val;
     }
@@ -113,7 +109,6 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
 
     const total = payload[0].value;
 
-    // label = "YYYY-MM-DD"
     let fecha = label ?? "";
     try {
         const [year, month, day] = (label ?? "").split("-");

@@ -44,7 +44,6 @@ export const ServiceFormField = <T extends string | number>({
 }: ServiceFormFieldProps<T>) => {
   const bgColorClass = whiteBg ? 'bg-white' : 'bg-[#D6EBF3]/30';
 
-  // Manejador de cambio para react-select
   const handleSelectChange = (
     selected: SelectOption<T> | readonly SelectOption<T>[] | null,
   ) => {
@@ -109,33 +108,33 @@ export const ServiceFormField = <T extends string | number>({
                 borderColor: '#447F98',
                 boxShadow: 'none',
                 minHeight: '42px',
-                fontSize: '0.85rem', // text-xs = 12px, reduce a 0.65rem (~10px)
+                fontSize: '0.85rem', 
                 ':hover': { borderColor: '#629BB5' }
               }),
               multiValue: (base) => ({
                 ...base,
                 backgroundColor: '#629BB5',
-                fontSize: '0.75rem', // reduce font size
+                fontSize: '0.75rem',
               }),
               multiValueLabel: (base) => ({
                 ...base,
                 color: 'white',
-                fontSize: '0.75rem' // reduce font size
+                fontSize: '0.75rem'
               }),
               multiValueRemove: (base) => ({
                 ...base,
                 color: 'white',
-                fontSize: '0.75rem', // reduce font size
+                fontSize: '0.75rem',
                 ':hover': { backgroundColor: '#447F98', color: 'white' }
               }),
               placeholder: (base) => ({
                 ...base,
                 color: 'text-neutral-400',
-                fontSize: '0.75rem' // reduce font size
+                fontSize: '0.75rem'
               }),
               option: (base, state) => ({
                 ...base,
-                fontSize: '0.75rem', // reduce font size
+                fontSize: '0.75rem',
                 color: 'text-white',
                 backgroundColor: state.isFocused
                   ? '#D6EBF3'
@@ -147,7 +146,7 @@ export const ServiceFormField = <T extends string | number>({
         ) : (
           <select
             className={`rounded-lg ${bgColorClass} p-3 text-xs text-neutral-600 ring-1 ring-[#447F98] focus:outline-none transition-all duration-200`}
-            value={String(value)} // Convierte el valor a string para el HTML select
+            value={String(value)} 
             onChange={onChange as (e: ChangeEvent<HTMLSelectElement>) => void}
             name={name}
             disabled={disabled}

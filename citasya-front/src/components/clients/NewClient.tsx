@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
-import { toast } from 'react-hot-toast/headless';
+import { toast } from 'react-hot-toast';
 
 interface NuevoClienteProps {
   onClose: () => void;
@@ -36,22 +36,17 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
     setLoading(true);
     setError(null);
 
-    // Validaciones frontend
     if (!formData.nombre.trim() || !formData.cedula.trim() || !formData.telefono.trim()) {
       setError("Todos los campos obligatorios deben estar completos.");
       setLoading(false);
       return;
     }
-
-    // Cedula: solo números, hasta 8 dígitos
     const cedulaRegex = /^\d{1,8}$/;
     if (!cedulaRegex.test(formData.cedula)) {
       setError("La cédula debe contener solo números y máximo 8 dígitos.");
       setLoading(false);
       return;
     }
-
-    // Teléfono: validar 58 + código de 3 dígitos + número de 7 dígitos
     const telefonoRegex = /^58\d{10}$/; 
     if (!telefonoRegex.test(formData.telefono)) {
       setError("El teléfono debe estar en formato 58XXXXXXXXXXX (ej: 584143252123).");
@@ -59,7 +54,6 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
       return;
     }
 
-    // Preparar datos
     const clientData = {
       name: formData.nombre.trim(),
       documentId: formData.cedula.trim(),
@@ -68,7 +62,6 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
     };
 
     try {
-      // Validar si ya existe el cliente con esa cédula
       const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients/document/${clientData.documentId}`);
       if (checkResponse.ok) {
         const existingClient = await checkResponse.json();
@@ -79,7 +72,6 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
         }
       }
 
-      // Crear cliente
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/clients`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,7 +89,6 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Ocurrió un error inesperado.";
       setError(errorMessage);
-      console.error("Error al agregar cliente:", e);
     } finally {
       setLoading(false);
     }
