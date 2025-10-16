@@ -10,64 +10,79 @@ const router = Router();
 const agent = await createSpaAgent();
 
 router.post("/webhook", async (req: Request, res: Response) => {
-  const incomingMsg: string = req.body.Body;
-  const sender: string = req.body.From.replace("whatsapp:+", "");
-  let botResponse: string = "Lo siento, hubo un error procesando tu solicitud. Por favor, inténtalo de nuevo más tarde.";
+  const incomingMsg: string = req.body.Body;
+  const sender: string = req.body.From.replace("whatsapp:+", "");
+  let botResponse: string =
+    "Lo siento, hubo un error procesando tu solicitud. Por favor, inténtalo de nuevo más tarde.";
 
-  try {
-    const clientRepo = AppDataSource.getRepository(Client);
-    const agentMessageRepo = AppDataSource.getRepository(AgentMessage);
+  try {
+    const clientRepo = AppDataSource.getRepository(Client);
+    const agentMessageRepo = AppDataSource.getRepository(AgentMessage);
 
     const client = await clientRepo.findOne({ where: { phone: sender } });
 
-    // Si el cliente existe, carga el historial
-    const historyMessages = client ? await agentMessageRepo.find({
-      where: { client_id: client.id },
-      order: { createdAt: "ASC" },
-      take: 20,
-    }) : [];
+    // Cargar historial si existe cliente
+    const historyMessages = client
+      ? await agentMessageRepo.find({
+          where: { client_id: client.id },
+          order: { createdAt: "ASC" },
+          take: 20,
+        })
+      : [];
 
-    // 2. Construir el historial de mensajes para el agente
-    const chatHistory = historyMessages.map(msg => {
-      if (msg.role === "client") {
-        return new HumanMessage(msg.message);
-      } else {
-        return new AIMessage(msg.message);
-      }
-    });
+    const chatHistory = historyMessages.map((msg) =>
+      msg.role === "client"
+        ? new HumanMessage(msg.message)
+        : new AIMessage(msg.message)
+    );
 
-    // 3. Invocar al agente, que ahora es responsable de la creación
-    const response = await agent.invoke({
-      input: incomingMsg,
-      chat_history: chatHistory,
-      sender_phone: sender,
-    });
+    // Invocar al agente
+    const response = await agent.invoke({
+      input: incomingMsg,
+      chat_history: chatHistory,
+      sender_phone: sender,
+    });
 
-    botResponse = response.output;
+    botResponse = response.output;
 
-    // **4. Guardar la conversación solo si el cliente ya existe**
-    if (client) {
-      const newClientMessage = agentMessageRepo.create({
-        message: incomingMsg,
-        role: "client",
-        client_id: client.id,
-      });
-      const newAgentMessage = agentMessageRepo.create({
-        message: botResponse,
-        role: "agent",
-        client_id: client.id,
-      });
-      await agentMessageRepo.save([newClientMessage, newAgentMessage]);
-    }
+    // Detectar si el agente confirmó una cita, resetear historial
+    const bookingKeywords = [
+      "✅ Cita agendada",
+      "Tu cita ha sido confirmada",
+      "Reserva completada",
+      "Tu cita para el servicio de",
+    ];
 
-    // 5. Enviar respuesta a WhatsApp
-    await sendWhatsAppMessage(sender, botResponse);
-    res.status(200).end();
-  } catch (error: any) {
-    console.error("❌ Error en webhook:", error);
-    await sendWhatsAppMessage(sender, botResponse);
-    res.status(500).send("Error interno del servidor");
-  }
+    const confirmedBooking = bookingKeywords.some((kw) =>
+      botResponse.toLowerCase().includes(kw.toLowerCase())
+    );
+
+    if (confirmedBooking && client) {
+      await agentMessageRepo.delete({ client_id: client.id });
+    }
+
+    // Guardar mensajes (si existe cliente)
+    if (client) {
+      const newClientMessage = agentMessageRepo.create({
+        message: incomingMsg,
+        role: "client",
+        client_id: client.id,
+      });
+      const newAgentMessage = agentMessageRepo.create({
+        message: botResponse,
+        role: "agent",
+        client_id: client.id,
+      });
+      await agentMessageRepo.save([newClientMessage, newAgentMessage]);
+    }
+
+    // Enviar respuesta a WhatsApp
+    await sendWhatsAppMessage(sender, botResponse);
+    res.status(200).end();
+  } catch (error: any) {
+    await sendWhatsAppMessage(sender, botResponse);
+    res.status(500).send("Error interno del servidor");
+  }
 });
 
 export default router;
