@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { VscAccount } from "react-icons/vsc";
 import { useUser } from '../context/UserContext'; 
 
-// Todos los textos usan la fuente Poppins
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
@@ -16,7 +15,6 @@ export const Header: React.FC = () => {
     logout(); 
     router.push("/"); 
   };
-  // Array de links para la navegación
   const navLinks = [
     { name: 'CITAS', href: '/appointments' },
     { name: 'CLIENTES', href: '/clients' },
@@ -27,7 +25,6 @@ export const Header: React.FC = () => {
   return (
     <header className="flex shrink-0 justify-center items-center px-20 pt-0 pb-px w-full bg-white rounded-md shadow-md h-[69px] max-md:px-8 max-md:pt-0 max-md:pb-px max-sm:px-4 max-sm:pt-0 max-sm:pb-px" style={{ boxShadow: '0 2px 12px 0 rgba(68, 127, 152, 0.08)' }}>
       <div className="flex shrink-0 justify-between items-center py-4 w-full max-w-screen-xl h-[68px] max-md:px-0 max-md:py-4">
-        {/* Logo */}
         {user?.role === 'Coordinator' ? (
           <div className="flex shrink-0 justify-start items-start w-20 h-8">
             <div className="flex shrink-0 justify-center items-center h-8 w-[75px]">
@@ -56,7 +53,6 @@ export const Header: React.FC = () => {
           </Link>
         )}
 
-        {/* Navegación */}
         <nav className="flex shrink-0 gap-1 justify-end items-center h-9 w-[431px] max-md:gap-2 max-md:w-auto max-sm:hidden">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;

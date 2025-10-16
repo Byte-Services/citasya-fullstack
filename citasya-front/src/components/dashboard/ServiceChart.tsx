@@ -31,8 +31,7 @@ export const ServicesChart: React.FC<ServicesChartProps> = ({ startDate, endDate
                 
                 const data = await response.json();
                 setChartData(data);
-            } catch (error) {
-                console.error("Error al obtener datos del gráfico:", error);
+            } catch {
             } finally {
                 setLoading(false);
             }
@@ -69,7 +68,6 @@ export const ServicesChart: React.FC<ServicesChartProps> = ({ startDate, endDate
     let offset = 0;
 
     const segments = chartData.map((d, index) => {
-        // Asegúrate de que el total no sea 0 para evitar divisiones por cero
         if (total === 0) return null;
 
         const dash = (d.value / total) * circumference;
@@ -82,13 +80,12 @@ export const ServicesChart: React.FC<ServicesChartProps> = ({ startDate, endDate
                 fill="transparent"
                 stroke={d.color}
                 strokeWidth={strokeWidth}
-                // Si es el último segmento, usa el dash restante para cerrar el círculo.
                 strokeDasharray={index === chartData.length - 1 ? `${circumference - offset} ${circumference}` : `${dash} ${circumference - dash}`}
                 strokeDashoffset={-offset}
                 style={{ transition: 'stroke-dasharray 0.3s' }}
             />
         );
-        offset += dash; // Nota: el offset ahora se suma
+        offset += dash; 
         return segment;
     });
 
@@ -123,7 +120,6 @@ export const ServicesChart: React.FC<ServicesChartProps> = ({ startDate, endDate
                     {chartData.map((d) => (
                         <div key={d.label} className="flex flex-col items-center">
                             <span className="text-2xl font-bold" style={{ color: d.color }}>
-                                {/* Redondeo al número más cercano */}
                                 {total > 0 ? ((d.value / total) * 100).toFixed(0) : 0}%
                             </span>
                             <span className="text-sm text-neutral-600 mt-1">{d.label}</span>

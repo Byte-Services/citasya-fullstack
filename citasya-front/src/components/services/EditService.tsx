@@ -52,7 +52,7 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
     const { name, value } = e.target;
     if (!name) return;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: "" })); // limpiar error al escribir
+    setErrors(prev => ({ ...prev, [name]: "" })); 
   };
 
   const handleEditService = async () => {
@@ -81,7 +81,6 @@ export const EditService: React.FC<EditServiceProps> = ({ onClose, serviceData, 
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
-        console.error('Failed to edit service:', err);
       } else {
         setError('Error desconocido al editar el servicio');
       }

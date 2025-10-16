@@ -96,13 +96,12 @@ const Services: React.FC = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          // ⬇️ Guardamos el error en estado en lugar de alert
           setNewSpecialtyError(errorData.error || 'Error al agregar la especialidad.');
           return;
         }
 
         setNewSpecialtyValue('');
-        setNewSpecialtyError(null); // limpiar error si se agregó bien
+        setNewSpecialtyError(null);
         fetchSpecialties();
       } catch (error: unknown) {
         setNewSpecialtyError(error instanceof Error ? error.message : String(error));
@@ -165,21 +164,20 @@ const Services: React.FC = () => {
           });
 
           if (!response.ok) {
-              // Si la respuesta no es 2xx, leemos el mensaje de error del backend
               const errorData = await response.json();
-              // ➡️ Actualizamos el estado de error
               setDeletingErrorMessage(errorData.error || 'Error al eliminar el servicio.');
-              return; // Detenemos la ejecución aquí
+              return; 
           }
           toast.success("Servicio eliminado correctamente");
-          // Si la eliminación fue exitosa (código 204), limpiamos el error
           setDeletingErrorMessage(null);
           handleCloseDeleteModal();
           fetchServices();
       } catch (error: unknown) {
-          console.error('Error al eliminar el servicio:', error);
-          // ➡️ En caso de un error de red, también actualizamos el estado
-          setDeletingErrorMessage('Error de conexión. Intente de nuevo más tarde.');
+          if (error instanceof Error) {
+              setDeletingErrorMessage(error.message);
+          } else {
+              setDeletingErrorMessage('Error de conexión. Intente de nuevo más tarde.');
+          }
       }
   };
 
@@ -203,9 +201,9 @@ const Services: React.FC = () => {
       setSpecialties(data);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error(error.message);
+        setSpecialtiesError(error.message);
       } else {
-        console.error(String(error));
+        setSpecialtiesError('Error desconocido al cargar especialidades');
       }
     } finally {
       setLoadingSpecialties(false);
@@ -224,9 +222,9 @@ const Services: React.FC = () => {
       setServices(data);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error(error.message);
+        setServicesError(error.message);
       } else {
-        console.error(String(error));
+        setServicesError('Error desconocido al cargar servicios');
       }
     } finally {
       setLoadingServices(false);
@@ -266,10 +264,8 @@ const Services: React.FC = () => {
           <h1 className="mx-0 mb-8 pt-8 text-4xl font-semibold text-center max-sm:mx-0 max-sm:my-8 max-sm:text-3xl" style={{ fontFamily: 'Roboto Condensed, sans-serif', color: "#447F98", }}>
             Servicios
           </h1>
-        {/* Nuevo diseño de filtros y botón */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-14 " style={{ fontFamily: 'Poppins, sans-serif'}}>
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            {/* Select de especialidad */}
             <div className="w-full sm:w-50">
               <ServiceFormField
                 placeholder="Selecciona una especialidad"
@@ -280,7 +276,6 @@ const Services: React.FC = () => {
                 whiteBg
               />
             </div>
-            {/* Select de estado */}
             <div className="w-full sm:w-50">
               <ServiceFormField
                 placeholder="Selecciona un estado"
@@ -292,7 +287,6 @@ const Services: React.FC = () => {
               />
             </div>
           </div>
-          {/* Botón Nuevo Servicio */}
           {user?.role === 'Admin' ? (
             <button
               onClick={handleOpenNewModal}
@@ -304,7 +298,6 @@ const Services: React.FC = () => {
           ) : null}
         </div>
 
-        {/* Grid de servicios */}
         <ServiceGrid
           services={filteredServices}
           loading={loadingServices}
@@ -316,27 +309,27 @@ const Services: React.FC = () => {
         <div className="mb-50" />
       </main>
 
-      {/* Renderizado condicional del modal de nuevo servicio */}
+      {/* Modal de nuevo servicio */}
       {showNewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
           <NewService onClose={handleCloseNewModal} specialties={specialties} />
         </div>
       )}
 
-      {/* Renderizado condicional del modal de edición */}
+      {/* Modal de edición */}
       {showEditModal && editingService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
           <EditService onClose={handleCloseEditModal} serviceData={editingService} specialties={specialties} />
         </div>
       )}
 
-      {/* Renderizado condicional del modal de eliminación */}
+      {/* Modal de eliminación */}
       {showDeleteModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm">
               <DeleteService 
                   onClose={handleCloseDeleteModal} 
                   onConfirm={confirmDelete} 
-                  errorMessage={deletingErrorMessage ?? undefined} // ⬅️ Pasamos el mensaje de error aquí
+                  errorMessage={deletingErrorMessage ?? undefined}
               />
           </div>
       )}
@@ -368,7 +361,7 @@ const Services: React.FC = () => {
                       className="ml-4 text-red-500 hover:text-red-700 font-bold"
                       onClick={() => handleRemoveSpecialty(specialty.id)}
                     >
-                      ×
+                      x
                     </button>
                   </div>
                 ))

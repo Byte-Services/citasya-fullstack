@@ -17,7 +17,7 @@ interface AppointmentFromBackend {
     date: string;
     hour: string;
     status: string;
-    client: Client | null; // Se agregó `| null` para manejar datos faltantes
+    client: Client | null; 
     worker: Worker | null;
     service: Service | null;
 }
@@ -38,7 +38,6 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
 
             try {
                 setLoading(true);
-                // Se envían las fechas a la API
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/appointments?startDate=${startDate}&endDate=${endDate}`);
 
                 if (!response.ok) {
@@ -47,14 +46,12 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
 
                 const data: AppointmentFromBackend[] = await response.json();
 
-                // Filtrar solo las citas pendientes o confirmadas
                 const filteredData = data.filter(appointment =>
                     appointment.status === "Pendiente" || appointment.status === "Confirmado"
                 );
 
                 setAppointments(filteredData);
-            } catch (err) {
-                console.error("Error al obtener las citas:", err);
+            } catch  {
                 setError("No se pudieron cargar las citas. Intente de nuevo más tarde.");
             } finally {
                 setLoading(false);
@@ -62,7 +59,7 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
         };
 
         fetchAppointments();
-    }, [startDate, endDate]); // Se actualiza cada vez que cambian las fechas
+    }, [startDate, endDate]); 
 
     if (loading) {
         return (
@@ -91,16 +88,11 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
         return time;
     };
     
-        // Función para formatear la fecha
     const formatDate = (dateString: string) => {
-        // Si la cadena de fecha es '2025-09-12', la dividimos en sus partes
         const [year, month, day] = dateString.split('-').map(Number);
         
-        // Creamos una nueva fecha usando las partes, lo que asegura que se use la zona horaria local.
-        // Restamos 1 al mes porque en JavaScript los meses van de 0 a 11 (0=Enero, 8=Septiembre, etc.)
         const d = new Date(year, month - 1, day);
 
-        // Formateamos la fecha a DD/MM/YYYY
         const formattedDay = d.getDate().toString().padStart(2, '0');
         const formattedMonth = (d.getMonth() + 1).toString().padStart(2, '0');
         const formattedYear = d.getFullYear();
@@ -122,7 +114,7 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
 
                 {appointments.slice(0, 8).map((appointment) => {
                     if (!appointment.client || !appointment.worker || !appointment.service) {
-                        return null; // Omitir si faltan datos
+                        return null; 
                     }
                     return (
                         <AppointmentItem
@@ -131,7 +123,7 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ startDate, e
                             service={appointment.service.name}
                             specialist={appointment.worker.name}
                             time={formatTime(appointment.hour)}
-                            date={formatDate(appointment.date)} // <-- ¡Se agrega la fecha aquí!
+                            date={formatDate(appointment.date)} 
 
                         />
                     );

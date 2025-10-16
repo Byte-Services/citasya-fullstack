@@ -28,7 +28,6 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
   allServices,
   onSaveSuccess,
 }) => {
-  // Convertir teléfono desde DB (58xxxxxxx → 04xxxxxxxxx)
   const toLocalPhone = (phone: string) => {
     if (phone.startsWith("58") && phone.length === 12) {
       return "0" + phone.slice(2);
@@ -70,27 +69,22 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
   };
 
   const validateForm = () => {
-    // Nombre
     if (!formData.name.trim()) return "El nombre es obligatorio.";
 
-    // Cédula (1 a 8 dígitos numéricos)
     const cedulaRegex = /^\d{1,8}$/;
     if (!formData.cedula.trim()) return "La cédula es obligatoria.";
     if (!cedulaRegex.test(formData.cedula)) return "La cédula debe tener hasta 8 números.";
 
-    // Teléfono (0414..., 0416..., etc.)
     const telefonoRegex = /^(0412|0414|0416|0424|0426|0422)\d{7}$/;
     if (!formData.phone.trim()) return "El teléfono es obligatorio.";
     if (!telefonoRegex.test(formData.phone)) {
       return "El teléfono debe comenzar con 0412, 0414, 0416, 0424, 0426 o 0422 y tener 11 dígitos.";
     }
 
-    // Email
     if (!formData.email.trim()) return "El correo es obligatorio.";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) return "El correo no tiene un formato válido.";
 
-    // Servicios
     if (formData.services.length === 0) return "Debes asignar al menos un servicio.";
 
     return null;
@@ -107,7 +101,6 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
       return;
     }
 
-    // Transformar teléfono de 0414xxxxxxx → 58414xxxxxxx
     const formattedPhone = formData.phone.replace(/^0/, "58");
 
     try {
@@ -122,7 +115,6 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
         }),
       });
 
-      // Cambia aquí: lee el mensaje del backend
       if (!response.ok) {
         const data = await response.json();
         setError(data.message || 'Error al editar especialista');
@@ -132,8 +124,7 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
       toast.success(`Especialista ${formData.name} editado correctamente`);
       onClose();
       if (onSaveSuccess) onSaveSuccess();
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("Ocurrió un error al guardar los cambios.");
     } finally {
       setLoading(false);

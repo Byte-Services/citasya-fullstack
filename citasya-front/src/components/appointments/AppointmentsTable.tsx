@@ -33,7 +33,6 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<AppointmentStatus | ''>('');
 
-  // --- PAGINACIÓN ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -48,7 +47,6 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
-  // -------------------
 
   const openStatusModal = (appointment: AppointmentData) => {
     setSelectedAppointment(appointment);
@@ -165,7 +163,6 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
         </tbody>
       </table>
 
-      {/* Controles de paginación */}
       <div className="flex justify-between items-center mt-6 px-6">
         <button
           onClick={goToPreviousPage}

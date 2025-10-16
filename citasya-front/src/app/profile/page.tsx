@@ -1,5 +1,4 @@
 'use client';
-
 import * as React from "react";
 import { ServiceFormField, SelectOption } from "../../components/InputField";
 import { NewUser } from "../../components/users/NewUser";
@@ -56,15 +55,10 @@ function UserDataForm() {
   }
 
   const validateUserData = (data: User): string | null => {
-    // Nombre
     if (!data.name.trim()) return "El nombre es obligatorio.";
-
-    // Email
     if (!data.email.trim()) return "El correo es obligatorio.";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(data.email)) return "El correo no tiene un formato válido.";
-
-    // Teléfono
     const phone = data.phone ?? "";
     if (!phone.trim()) return "El teléfono es obligatorio.";
     const telefonoRegex = /^(0412|0414|0416|0424|0426|0422)\d{7}$/;

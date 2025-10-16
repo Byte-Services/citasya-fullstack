@@ -30,7 +30,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
     name: string;
     services?: { id: number; name: string }[];
   }
-  const [allWorkers, setAllWorkers] = useState<Worker[]>([]); // Nuevo estado
+  const [allWorkers, setAllWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? ''}/admin`;
@@ -55,8 +55,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
         if (!workersResponse.ok) throw new Error('Error al obtener especialistas');
         const workersData = await workersResponse.json();
         setAllWorkers(workersData);
-      } catch (err) {
-        console.error('Failed to fetch initial data:', err);
+      } catch {
         setError('No se pudieron cargar los datos iniciales.');
       }
     };
@@ -76,8 +75,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
             label: s.name,
           }));
           setAvailableServices(formattedServices);
-        } catch (err) {
-          console.error('Failed to fetch services:', err);
+        } catch {
           setError('No se pudieron cargar los servicios de esta especialidad.');
         }
       } else {
@@ -140,8 +138,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
           if (!response.ok) throw new Error("Error obteniendo horarios disponibles");
           const data = await response.json();
           setAvailableHours(data.slots || []);
-        } catch (err) {
-          console.error(err);
+        } catch {
           setAvailableHours([]);
         }
       } else {
@@ -210,8 +207,6 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
 
       const contentType = response.headers.get('content-type');
       if (!contentType?.includes('application/json')) {
-        const text = await response.text();
-        console.error('Respuesta no JSON:', text.substring(0, 200));
         throw new Error('Error del servidor. Inténtalo de nuevo.');
       }
 

@@ -54,10 +54,9 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
 
     if (!res.ok) throw new Error("Error al actualizar disponibilidad");
 
-    onWorkerUpdated(); // vuelve a cargar especialistas
+    onWorkerUpdated();
     setShowAvailabilityModal(false);
-  } catch (error) {
-    console.error(error);
+  } catch {
     alert("No se pudo actualizar la disponibilidad");
   }
 };
@@ -66,7 +65,6 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
     "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
   ];
 
-  // Traducción de días para mostrar en la tabla
   const dayLabels: Record<string, string> = {
     Mon: "Lun",
     Tue: "Mar",
@@ -81,10 +79,10 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
   const formatPhone = (phone: string) => {
     if (!phone || phone.length !== 12 || !phone.startsWith("58")) return phone;
 
-    const area = phone.slice(2, 5);       // "414"
-    const number = phone.slice(5);        // "3252123"
+    const area = phone.slice(2, 5);       
+    const number = phone.slice(5);        
 
-    return `0${area}-${number}`;          // "0414-3252123"
+    return `0${area}-${number}`;
   };
 
   return (
@@ -103,7 +101,6 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
             <VscEdit onClick={() => setShowEditModal(true)} size={18} className="text-[#447F98] cursor-pointer hover:text-[#629BB5] transition-colors" />
           </div>
           <div className="flex gap-5 px-8 max-md:flex-col max-md:px-0">
-            {/* Columna izquierda: Nombre y Teléfono */}
             <div className="mt-6 w-full flex flex-col gap-4">
               <div>
                 <div className="text-xs text-neutral-600">Nombre del especialista:</div>
@@ -118,7 +115,6 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
                 </div>
               </div>
             </div>
-            {/* Columna derecha: Cédula y Email */}
             <div className="mt-6 w-full flex flex-col gap-4">
               <div>
                 <div className="text-xs text-neutral-600">Cédula:</div>
@@ -162,7 +158,6 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
           </button>
         </div>
         <div className="px-8 mt-6">
-          {/* Tabla resumen */}
           <div className="flex justify-center">
             <div className="w-1/2 rounded-lg border border-gray-200">
               <table className="w-full text-xs text-neutral-600">
@@ -221,7 +216,6 @@ export function SpecialistProfile({ specialist, onWorkerUpdated, allServices }: 
               </div>
               </div>
 
-              {/* Descanso */}
               {specialist.schedule && specialist.schedule.breakTime !== "none" ? (
                 <div className="mt-3 text-xs text-neutral-500 text-center">
                   Descanso: {specialist.schedule.breakTime}

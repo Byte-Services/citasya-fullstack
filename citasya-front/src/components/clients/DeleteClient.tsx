@@ -6,7 +6,7 @@ import { VscChromeClose } from 'react-icons/vsc';
 
 interface EliminarClienteProps {
   onClose: () => void;
-  onConfirm: () => Promise<void>; // ahora async
+  onConfirm: () => Promise<void>; 
 }
 
 export const EliminarCliente: React.FC<EliminarClienteProps> = ({ onClose, onConfirm }) => {

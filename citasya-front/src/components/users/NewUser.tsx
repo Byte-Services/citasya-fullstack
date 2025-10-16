@@ -30,7 +30,6 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
         | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
         | { target: { name?: string; value: string | string[] } }
     ) => {
-      // If e is a synthetic event (from input/select/textarea)
       if (
         "target" in e &&
         typeof (e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).type === "string"
@@ -48,7 +47,6 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
           }));
         }
       } else if ("target" in e && typeof e.target.value !== "undefined") {
-        // Custom object shape from ServiceFormField
         const { name, value } = e.target;
         if (name) {
           setFormData(prev => ({
@@ -149,7 +147,6 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
 
           <form className="flex flex-col mt-8 w-full text-neutral-600">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              {/* Columna 1 */}
               <div className="flex flex-col gap-6">
                 <ServiceFormField<string>
                   label="Nombre:"
@@ -179,7 +176,6 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
                 />
               </div>
 
-              {/* Columna 2 */}
               <div className="flex flex-col gap-6">
                 <ServiceFormField<string>
                   label="Teléfono:"

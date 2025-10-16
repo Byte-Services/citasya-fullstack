@@ -56,7 +56,6 @@ const AvailabilitySelector: React.FC<AvailabilitySelectorProps> = ({ onSave, onC
     }));
   };
 
-  // Helper: devuelve true si start < end (comparación HH:MM)
   const isTimeBefore = (start: string, end: string): boolean => {
     if (!start || !end) return false;
     const [sh, sm] = start.split(':').map(Number);

@@ -128,8 +128,7 @@ function HomePage() {
           startDate: prevStartDate.toISOString(),
           endDate: prevEndDate.toISOString(),
         });
-      } catch (error) {
-        console.error(error);
+      } catch {
       } finally {
         setLoadingData(false);
       }
@@ -258,8 +257,6 @@ function HomePage() {
                     </div>
                   </div>
                 </section>
-
-                {/* resto igual */}
                 <section className="mt-14 w-full max-md:mt-10 max-md:max-w-full">
                   <div className="flex gap-5 max-md:flex-col max-md:">
                     <div className="w-6/12 max-md:ml-0 max-md:w-full">
@@ -280,7 +277,6 @@ function HomePage() {
                             <div className="flex flex-col w-full max-w-full">
                                 <div className="flex flex-row items-center justify-between px-10 py-4 bg-neutral-100 rounded-t-lg">
                                     <h2 className="text-md font-medium text-neutral-700">Nuevos Clientes</h2>
-                                    {/* editar meta con botón */}
                                     <div className="text-xs flex items-center gap-2 text-neutral-500">
                                         {!isEditingMeta ? (
                                             <button
@@ -307,17 +303,14 @@ function HomePage() {
                                         )}
                                     </div>
                                 </div>
-                                {/* número de clientes */}
                                 <p className="self-center pt-6 text-4xl leading-tight text-neutral-600 max-md:text-2xl">
                                 {dashboardData.newClients}
                                 </p>
 
-                                {/* comparación dinámica */}
                                 <p className="text-xs font-medium mt-2 text-[#447F98]">
                                 {getPercentChange(dashboardData.newClients, previousData.newClients)}
                                 </p>
 
-                                {/* barra de progreso */}
                                 <div className="mx-10 mt-4 bg-gray-200 rounded-full h-2.5">
                                 <div
                                     className="bg-[#447F98] h-2.5 rounded-full transition-all duration-500"
@@ -330,7 +323,6 @@ function HomePage() {
                                 ></div>
                                 </div>
 
-                                {/* texto meta y progreso */}
                                 <div className="px-10 w-full flex justify-between text-xs font-medium text-neutral-500 mt-1">
                                 <span>Meta: {metaClientes}</span>
                                 <span>
@@ -346,7 +338,6 @@ function HomePage() {
                             </div>
                         </section>
 
-                           {/* Secciones de botones */}
                             <section className="flex flex-wrap gap-10 mt-14 w-full max-w-xl mx-auto text-2xl font-semibold text-center text-white justify-center items-center">
                                 <button
                                     onClick={() => router.push("/appointments#top")}
