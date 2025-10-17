@@ -25,43 +25,43 @@ export const EliminarCliente: React.FC<EliminarClienteProps> = ({ onClose, onCon
   };
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <main className="max-w-[400px] w-full">
-        <div className="flex flex-col py-9 px-8 w-full bg-neutral-100 rounded-[30px] shadow-lg">
-          <div className="flex flex-row justify-between items-center w-full px-10 gap-6">
-            <div className="flex-1"></div>
-            <h1 className="text-2xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-              Eliminar Cliente
-            </h1>
-            <button onClick={onClose} aria-label="Cerrar modal" className="flex-1 text-right text-neutral-600 hover:text-neutral-800 transition-colors duration-200">
-              <VscChromeClose className="inline-block w-6 h-6" />
-            </button>
-          </div>
+     <div className="fixed inset-0 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm z-50 px-4 sm:px-6">
+      <div className="w-full max-w-sm bg-neutral-100 rounded-[25px] shadow-2xl p-6 sm:p-10 font-[Poppins,sans-serif] text-center">
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-medium text-[#447F98] flex-1 font-[Roboto_Condensed,sans-serif]">
+            Eliminar Cliente
+          </h1>
+          <button onClick={onClose} className="text-neutral-600 hover:text-neutral-800 transition-colors">
+            <VscChromeClose className="w-6 h-6" />
+          </button>
+        </header>
 
-            <div className="text-center mt-6 mb-8 text-neutral-600">
-            {error ? (
-              <p className="mt-4 text-sm text-red-500">{error}</p>
-            ) : (
-              <>
-              <p>¿Estás seguro de que deseas eliminar este cliente?</p>
-              <p>Esta acción no se puede deshacer.</p>
-              </>
-            )}
-            </div>
-          
-          <div className="flex justify-center gap-4">
-            {error ? (
-            <button onClick={onClose} className="px-8 py-3 text-base font-bold text-neutral-600 bg-neutral-300 rounded-[40px] hover:bg-neutral-400 transition-colors">
-              Cancelar
-            </button>
-            ) : (
-            <button onClick={handleConfirm} className="px-8 py-3 text-base font-bold bg-[#FEE2E2] text-[#B91C1C] rounded-[40px] hover:bg-[#FFC1C1] transition-colors">
+        {error ? (
+          <p className="text-red-500 mb-6">{error}</p>
+        ) : (
+          <>
+            <p className="text-neutral-600 mb-2">¿Estás seguro de que deseas eliminar este cliente?</p>
+            <p className="text-neutral-500 mb-6">Esta acción no se puede deshacer.</p>
+          </>
+        )}
+
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <button
+            onClick={onClose}
+            className="px-8 py-3 font-semibold rounded-[40px] bg-neutral-300 hover:bg-neutral-400 transition-colors"
+          >
+            Cancelar
+          </button>
+          {!error && (
+            <button
+              onClick={handleConfirm}
+              className="px-8 py-3 font-semibold rounded-[40px] bg-[#FEE2E2] text-[#B91C1C] hover:bg-[#FFC1C1] transition-colors"
+            >
               Eliminar
             </button>
-            )}
-          </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>,
     document.body
   );

@@ -93,7 +93,8 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
 
   return (
     <div className="bg-white overflow-hidden" style={{ fontFamily: 'Poppins, sans-serif'}}>
-      <table className="min-w-full divide-y divide-gray-200">
+      <div className="overflow-x-auto w-full">
+      <table className="w-full divide-y divide-gray-200 sm:min-w-full min-w-[700px]">
         <thead className="bg-neutral-100">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 ">Estado cita</th>
@@ -162,33 +163,27 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
           ))}
         </tbody>
       </table>
-
-      <div className="flex justify-between items-center mt-6 px-6">
-        <button
-          onClick={goToPreviousPage}
-          disabled={currentPage === 1}
-          className={`px-4 py-2 rounded-lg text-xs shadow ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
-        >
-          ← Anterior
-        </button>
-
-        <span className="text-sm text-gray-600">
-          Página {currentPage} de {totalPages}
-        </span>
-
-        <button
-          onClick={goToNextPage}
-          disabled={currentPage === totalPages}
-          className={`px-4 py-2 rounded-lg text-xs shadow ${currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
-        >
-          Siguiente →
-        </button>
       </div>
+
+      <div className="flex justify-between items-center mt-6 px-4">
+        <button
+          onClick={goToPreviousPage}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded-lg text-center text-xs shadow ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
+        >← Anterior</button>
+        <span className="text-sm text-gray-600 text-center max-sm:text-xs max-sm:mx-1">
+          Pág. {currentPage} de {totalPages}</span>
+        <button
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-2 rounded-lg text-xs shadow ${currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#D6EBF3] text-[#447F98] hover:bg-[#B0E0E6]'}`}
+        >Siguiente →</button>
+      </div>
 
       {/* Modal para cambiar estado */}
       {showStatusModal && selectedAppointment && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" style={{ fontFamily: 'Poppins, sans-serif'}}>
-          <div className="bg-white rounded-3xl shadow-lg p-8 w-[400px]">
+          <div className="bg-white rounded-3xl shadow-lg p-8 w-[90%] max-w-md">
             <div className="flex justify-center items-center mb-4">
               <h2 className="text-xl font-medium text-[#447F98]">Cambiar Estado</h2>
             </div>
@@ -202,9 +197,9 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
               whiteBg={false} 
               className="w-full mb-4"
             />
-            <div className="flex justify-center gap-2 text-sm">
-              <button onClick={() => setShowStatusModal(false)} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Cancelar</button>
-              <button onClick={handleUpdateStatus} className="px-4 py-2 bg-[#447F98] text-white rounded-lg hover:bg-[#629BB5]">Actualizar</button>
+            <div className="flex flex-col sm:flex-row justify-center gap-2 text-sm mt-4">
+              <button onClick={() => setShowStatusModal(false)} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 w-full sm:w-auto">Cancelar</button>
+              <button onClick={handleUpdateStatus} className="px-4 py-2 bg-[#447F98] text-white rounded-lg hover:bg-[#629BB5] w-full sm:w-auto">Actualizar</button>
             </div>
           </div>
         </div>,
@@ -214,12 +209,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({ appointmen
       {/* Modal para cancelar cita */}
       {showCancelModal && selectedAppointment && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" style={{ fontFamily: 'Poppins, sans-serif'}}>
-          <div className="bg-white rounded-3xl shadow-lg p-8 w-[400px] text-center">
+          <div className="bg-white rounded-3xl shadow-lg p-8 w-[90%] max-w-md text-center">
             <h2 className="text-xl font-medium text-[#B91C1C] mb-4">Cancelar Cita</h2>
             <p className="mb-6 text-sm">¿Estás seguro que quieres cancelar esta cita?</p>
-            <div className="flex justify-center gap-4  text-sm">
-              <button onClick={() => setShowCancelModal(false)} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">No</button>
-              <button onClick={handleCancelAppointment} className="px-4 py-2 bg-[#FEE2E2] text-[#B91C1C] rounded-lg hover:bg-[#FFC1C1]">Sí, Cancelar</button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4  text-sm">
+              <button onClick={() => setShowCancelModal(false)} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 w-full sm:w-auto">No</button>
+              <button onClick={handleCancelAppointment} className="px-4 py-2 bg-[#FEE2E2] text-[#B91C1C] rounded-lg hover:bg-[#FFC1C1] w-full sm:w-auto">Sí, Cancelar</button>
             </div>
           </div>
         </div>,

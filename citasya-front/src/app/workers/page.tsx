@@ -5,19 +5,22 @@ import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 function Workers() {
   useAuthRedirect();
-  
   return (
-    <div className="z-0 relative w-full min-h-screen flex flex-col items-center pb-20 bg-[#F9FAFB] ">
-      <main className="mt-8 ml-10 w-full max-w-[1273px] max-md:mt-10 max-md:max-w-full flex flex-col flex-grow h-full">
+    <div
+      className="relative z-0 flex flex-col items-center min-h-screen w-full bg-[#F9FAFB] pb-20 px-4 sm:px-6 lg:px-10"
+      style={{ fontFamily: "Poppins, sans-serif" }}
+    >
+      <main className="flex flex-col items-center w-full max-w-[1273px] mt-8 sm:mt-10 flex-grow">
         <h1
-          className="text-4xl font-semibold text-[#447F98] max-md:max-w-full text-center w-full"
+          className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#447F98] text-center mb-8"
           style={{ fontFamily: "Roboto Condensed, sans-serif" }}
         >
           Directorio de Especialistas
         </h1>
-        <div className="mt-7 w-full max-md:max-w-full flex-grow h-full">
+
+        <section className="w-full flex-grow h-full">
           <SpecialistList />
-        </div>
+        </section>
       </main>
     </div>
   );

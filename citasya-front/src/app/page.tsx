@@ -161,53 +161,48 @@ function HomePage() {
   }
 
   return (
-    <div
-      className="flex overflow-hidden flex-col items-center pb-28 bg-[#F9FAFB] max-md:pb-24"
+    <div className="flex flex-col items-center w-full bg-[#F9FAFB] overflow-x-hidden pb-24 sm:pb-28"
       style={{ fontFamily: "Poppins, sans-serif" }}
     >
-      <main className="flex flex-col w-full px-30">
-        <div className="flex items-center justify-between mt-8">
+      <main className="flex flex-col w-full px-4 sm:px-8 lg:px-12">
+        <div className="flex flex-wrap items-center justify-between mt-8 gap-4 max-md:flex-col max-md:items-start">
           <div className="flex items-center">
             <span
-              className="mr-4 flex items-center justify-center bg-[#D9E8F5] rounded-full"
-              style={{ width: 48, height: 48 }}
+              className="mr-4 flex items-center justify-center bg-[#D9E8F5] rounded-full w-12 h-12 max-sm:w-10 max-sm:h-10"
             >
               <CiCalendar className="text-2xl text-[#447F98]" />
             </span>
             <div>
               <h1
-                className="text-2xl font-semibold text-neutral-800"
+                className="text-2xl max-sm:text-xl font-semibold text-neutral-800"
                 style={{ fontFamily: "Roboto Condensed, sans-serif" }}
               >
                 SPA CARACAS
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 max-sm:text-xs">
                 Dashboard de gestión • {displayDateString}
               </p>
             </div>
           </div>
-          <div className="flex items-right h-full">
-            <div className="flex rounded-xl overflow-hidden border border-gray-200">
-              {[
-                { label: "Día", value: "day" },
-                { label: "Semana", value: "week" },
-                { label: "Mes", value: "month" },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() =>
-                    setActiveTab(tab.value as "day" | "week" | "month")
-                  }
-                  className={`px-8 py-3 text-sm font-medium transition-colors duration-200 ${
-                    activeTab === tab.value
-                      ? "bg-[#D6EBF3] text-[#447F98] border-b-2 border-t-2 border-[#447F98]"
-                      : "bg-white text-gray-500"
-                  }`}
-                  style={{ fontFamily: "Poppins, sans-serif" }}
-                >
-                  {tab.label}
-                </button>
-              ))}
+
+          <div className="flex w-full sm:w-auto justify-center sm:justify-end">
+            <div className="flex rounded-xl overflow-hidden border border-gray-200 w-full sm:w-auto">
+              {["Día", "Semana", "Mes"].map((label, i) => {
+                const value = ["day", "week", "month"][i];
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setActiveTab(value as "day" | "week" | "month")}
+                    className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 text-sm font-medium transition-colors duration-200 ${
+                      activeTab === value
+                        ? "bg-[#D6EBF3] text-[#447F98] border-b-2 border-t-2 border-[#447F98]"
+                        : "bg-white text-gray-500"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -257,23 +252,23 @@ function HomePage() {
                     </div>
                   </div>
                 </section>
-                <section className="mt-14 w-full max-md:mt-10 max-md:max-w-full">
-                  <div className="flex gap-5 max-md:flex-col max-md:">
-                    <div className="w-6/12 max-md:ml-0 max-md:w-full">
+                <section className="mt-14 w-full max-md:mt-10 ">
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    <div className="w-full lg:w-1/2">
                       <AppointmentsList
                         startDate={dashboardData.startDate}
                         endDate={dashboardData.endDate}
                       />
                     </div>
-                    <div className="ml-5 w-6/12 max-md:ml-0 max-md:w-full">
+                    <div className="w-full lg:w-1/2 flex flex-col gap-6">
                       <div className="grow max-md:mt-10 max-md:max-w-full">
-                        <section className="flex flex-col w-full bg-white rounded-lg max-md:px-5 max-md:max-w-full">
+                        <section className="bg-white rounded-lg">
                           <ServicesChart
                             startDate={dashboardData.startDate}
                             endDate={dashboardData.endDate}
                           />
                         </section>
-                        <section className="flex flex-col items-center mt-7 pb-6 font-bold text-center bg-white rounded-lg shadow-md max-md:px-5 max-md:max-w-full">
+                        <section className="bg-white rounded-lg shadow-md flex flex-col items-center mt-6 pb-4">
                             <div className="flex flex-col w-full max-w-full">
                                 <div className="flex flex-row items-center justify-between px-10 py-4 bg-neutral-100 rounded-t-lg">
                                     <h2 className="text-md font-medium text-neutral-700">Nuevos Clientes</h2>
@@ -307,7 +302,7 @@ function HomePage() {
                                 {dashboardData.newClients}
                                 </p>
 
-                                <p className="text-xs font-medium mt-2 text-[#447F98]">
+                                <p className="text-xs font-medium mt-2 text-center text-[#447F98]">
                                 {getPercentChange(dashboardData.newClients, previousData.newClients)}
                                 </p>
 
@@ -338,10 +333,10 @@ function HomePage() {
                             </div>
                         </section>
 
-                            <section className="flex flex-wrap gap-10 mt-14 w-full max-w-xl mx-auto text-2xl font-semibold text-center text-white justify-center items-center">
+                        <section className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
                                 <button
                                     onClick={() => router.push("/appointments#top")}
-                                    className="relative cursor-pointer h-[50px] w-[201px] max-sm:h-[45px] max-sm:w-[180px]"
+                                    className="relative h-[50px] w-[200px] max-sm:w-[180px]"
                                 >
                                     <div className="rounded-lg shadow-lg bg-[#447F98] size-full" />
                                     <div className="absolute left-[24px] top-[13px]">
@@ -372,9 +367,9 @@ function HomePage() {
                   </div>
                 </section>
                 {dashboardData && (
-                <section className="mt-14 w-full max-md:mt-10 max-md:max-w-full">
-                    <div className="bg-white rounded-lg shadow-md ">
-                    <h2 className="self-center p-6 text-md font-medium rounded-t-lg text-left text-neutral-700 bg-neutral-100 w-full">
+                <section className="mt-14 w-full max-md:mt-10">
+                  <div className="bg-white rounded-lg shadow-md ">
+                    <h2 className="p-4 sm:p-6 text-md font-medium text-neutral-700 bg-neutral-100 rounded-t-lg">
                         Ingresos por Citas
                     </h2>
                     <RevenueChart

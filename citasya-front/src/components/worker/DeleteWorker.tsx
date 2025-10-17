@@ -26,7 +26,7 @@ export const DeleteWorker: React.FC<DeleteWorkerProps> = ({ onClose, onConfirm }
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <main className="max-w-[400px] w-full">
+      <main className="bg-neutral-100 rounded-[30px] shadow-2xl w-[90%] sm:w-[75%] md:max-w-[400px] max-h-[80vh] overflow-y-auto ">
         <div className="flex flex-col py-9 px-8 w-full bg-neutral-100 rounded-[30px] shadow-lg">
           <div className="flex flex-row justify-between items-center w-full px-10 gap-6">
             <div className="flex-1"></div>

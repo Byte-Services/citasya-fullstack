@@ -123,76 +123,55 @@ export const EditarCliente: React.FC<EditarClienteProps> = ({ onClose, clientDat
   };
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0  flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <main className="max-w-[679px] w-full">
-        <div className="flex flex-col py-9 w-full bg-neutral-100 rounded-[30px] shadow-lg">
-          <div className="flex flex-row justify-between items-center w-full px-10">
-            <div className="flex-1"></div>
-            <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-              Editar Perfil Cliente
-            </h1>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              className="flex-1 text-right text-neutral-600 hover:text-neutral-800 transition-colors duration-200"
-            >
-              <VscChromeClose className="inline-block w-6 h-6" />
-            </button>
-          </div>
+      <div className="fixed inset-0 flex items-center justify-center bg-neutral-300/50 backdrop-blur-sm z-50 px-4 sm:px-6">
+      <div className="w-full max-w-md sm:max-w-xl bg-neutral-100 rounded-[25px] shadow-2xl p-6 sm:p-10 font-[Poppins,sans-serif]">
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl sm:text-4xl font-medium text-[#447F98] text-center flex-1 font-[Roboto_Condensed,sans-serif]">
+            Editar Cliente
+          </h1>
+          <button onClick={onClose} className="text-neutral-600 hover:text-neutral-800 transition-colors">
+            <VscChromeClose className="w-6 h-6" />
+          </button>
+        </header>
 
-          <form
-            className="flex flex-col px-10 mt-8 w-full text-neutral-600"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleUpdateClient();
-            }}
+        <form onSubmit={(e) => { e.preventDefault(); handleUpdateClient(); }} className="flex flex-col gap-4">
+          <ServiceFormField 
+            label="Nombre:" 
+            name="nombre" 
+            value={formData.nombre} 
+            onChange={handleChange} 
+          />
+          <ServiceFormField 
+            label="Cédula:" 
+            name="cedula" 
+            value={formData.cedula} 
+            onChange={handleChange} 
+          />
+          <ServiceFormField 
+            label="Teléfono:" 
+            name="telefono" 
+            value={formatPhone(formData.telefono)} 
+            onChange={handleChange} 
+          />
+          <ServiceFormField 
+            label="Notas:" 
+            name="notes" 
+            type="textarea" 
+            value={formData.notes} 
+            onChange={handleChange} 
+          />
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-6 mx-auto w-full sm:w-[160px] py-4 bg-[#447F98] hover:bg-[#629BB5] text-white font-semibold rounded-[40px] transition-colors"
           >
-            <ServiceFormField
-              label="Nombre:"
-              placeholder="Nombre del cliente"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
-              className='mb-4'
-            />
-            <ServiceFormField
-              label="Cédula:"
-              placeholder="Ej: 12345678"
-              name="cedula"
-              value={formData.cedula}
-              onChange={handleChange}
-              className='mb-4'
-            />
-            <ServiceFormField
-              label="Teléfono:"
-              placeholder="Ej: 04141234567"
-              name="telefono"
-              value={formatPhone(formData.telefono)}
-              onChange={handleChange}
-              className='mb-4'
-            />
-            <ServiceFormField
-              label="Notas:"
-              placeholder="Notas adicionales..."
-              type="textarea"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              className='mb-4'
-            />
-
-            {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
-
-            <button
-              type="submit"
-              className="flex self-center justify-center px-11 py-5 mt-6 w-[149px] text-base font-bold text-center text-white bg-[#447F98] rounded-[40px] hover:bg-[#629BB5] transition-colors duration-200"
-              disabled={loading}
-            >
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </form>
-        </div>
-      </main>
+            {loading ? "Guardando..." : "Guardar"}
+          </button>
+        </form>
+      </div>
     </div>,
     document.body
   );

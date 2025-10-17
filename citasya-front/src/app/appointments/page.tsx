@@ -176,9 +176,9 @@ const Appointments: React.FC = () => {
 
   return (
     <>
-      <main className="container pl-30 pr-30 mx-auto max-md:px-5 max-sm:px-2.5 bg-[#F9FAFB] pt-8"  style={{ fontFamily: 'Poppins, sans-serif'}}>
-        <div className= "bg-white p-10 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-5">
+      <main className="relative px-5 sm:px-10 lg:px-20 bg-[#F9FAFB] pt-8" style={{ fontFamily: 'Poppins, sans-serif'}}>
+        <div className="bg-white p-6 sm:p-10 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-5 flex-wrap gap-4">
               <h2 className="mx-0 text-2xl font-medium text-[#447F98] max-sm:text-2xl">
                 Calendario
               </h2>
@@ -222,8 +222,8 @@ const Appointments: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <div className="flex flex-wrap items-center gap-6 max-md:justify-center mt-4">
-              <div className="w-[190px]">
+            <div className="flex flex-wrap items-center gap-6 max-md:flex-col max-md:w-full max-md:items-stretch mt-4">
+              <div className="w-[190px] md:w-[190px] max-md:w-full">
                 <ServiceFormField
                   label="Estado cita:"
                   placeholder="Selecciona un estado"
@@ -232,16 +232,18 @@ const Appointments: React.FC = () => {
                   onChange={(e) => setSelectedStatus(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 />
               </div>
-              <div className="w-[210px]">
+
+              <div className="w-[210px] md:w-[210px] max-md:w-full">
                 <ServiceFormField
                   label="Especialista:"
                   placeholder="Selecciona un especialista"
-                  options={workersForFilter} 
+                  options={workersForFilter}
                   value={selectedEspecialista}
                   onChange={(e) => setSelectedEspecialista(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 />
               </div>
-              <div className="w-[190px]">
+
+              <div className="w-[190px] md:w-[190px] max-md:w-full">
                 <ServiceFormField
                   label="Servicio:"
                   placeholder="Selecciona un servicio"
@@ -250,7 +252,8 @@ const Appointments: React.FC = () => {
                   onChange={(e) => setSelectedService(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 />
               </div>
-              <div className="w-[190px]">
+
+              <div className="w-[190px] md:w-[190px] max-md:w-full">
                 <ServiceFormField
                   label="Fecha:"
                   placeholder="Selecciona una fecha"
@@ -261,18 +264,18 @@ const Appointments: React.FC = () => {
                   className="gap-2"
                 />
               </div>
-              <div className="relative w-[250px] mt-7 ml-15 text-neutral-600">
+
+              <div className="relative w-[250px] md:w-[250px] max-md:w-full mt-7 md:ml-15 text-neutral-600">
                 <ServiceFormField
                   type="text"
                   placeholder="Buscar por cliente"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)} 
+                  onChange={(e) => setSearchTerm(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                   label=""
-                  className="rounded-lg text-neutral-600" 
+                  className="rounded-lg text-neutral-600"
                 />
               </div>
             </div>
-
           </div>
 
           {loading && <p className="text-center text-gray-500">Cargando tabla de citas...</p>}

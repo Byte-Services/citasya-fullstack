@@ -13,7 +13,7 @@ function Clients() {
       </h1>
 
       <div className="mt-7 w-full max-w-[1273px] max-md:max-w-full">
-        <div className="flex gap-5 max-md:flex-col">
+        <div className="flex gap-5 max-md:flex-col px-4">
           <ClientDirectory />
         </div>
       </div>

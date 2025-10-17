@@ -4,7 +4,7 @@ import React, { useState, ChangeEvent } from 'react';
 import { VscChromeClose } from "react-icons/vsc";
 import { ServiceFormField } from '../InputField';
 import { UserRole, User } from '../../types/user';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast/headless';
 
 interface NewUserProps {
   onClose: () => void;
@@ -25,37 +25,39 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-    const handleChange = (
-      e:
-        | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-        | { target: { name?: string; value: string | string[] } }
-    ) => {
-      if (
-        "target" in e &&
-        typeof (e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).type === "string"
-      ) {
-        const { name, value, type } = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-        if (type === "checkbox") {
-          setFormData(prev => ({
-            ...prev,
-            [name]: (e.target as HTMLInputElement).checked,
-          }));
-        } else {
-          setFormData(prev => ({
-            ...prev,
-            [name]: value,
-          }));
-        }
-      } else if ("target" in e && typeof e.target.value !== "undefined") {
-        const { name, value } = e.target;
-        if (name) {
-          setFormData(prev => ({
-            ...prev,
-            [name]: value,
-          }));
-        }
+  const handleChange = (
+    e:
+      | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+      | { target: { name?: string; value: string | string[] } }
+  ) => {
+    // If e is a synthetic event (from input/select/textarea)
+    if (
+      "target" in e &&
+      typeof (e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).type === "string"
+    ) {
+      const { name, value, type } = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+      if (type === "checkbox") {
+        setFormData(prev => ({
+          ...prev,
+          [name]: (e.target as HTMLInputElement).checked,
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+        }));
       }
-    };
+    } else if ("target" in e && typeof e.target.value !== "undefined") {
+      // Custom object shape from ServiceFormField
+      const { name, value } = e.target;
+      if (name) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+    }
+  };
 
 
   const handleAddUser = async () => {
@@ -128,11 +130,11 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
 
   return (
     <main style={{ fontFamily: 'Poppins, sans-serif'}}>
-      <div className="max-w-xl w-full min-w-[600px] mx-4 sm:mx-6 md:mx-auto">
-        <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl">
+      <div className="max-w-xl w-full mx-0 sm:mx-6 md:mx-auto max-sm:min-w-full overflow-y-auto max-h-screen">
+        <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl max-sm:rounded-none">
           <header className="flex justify-between items-center w-full">
-            <div className="flex-1"></div>
-            <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]"
+            <div className="flex-1 max-sm:hidden"></div>
+            <h1 className="text-4xl max-sm:text-3xl font-medium leading-none text-center text-[#447F98]"
               style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
               Nuevo Usuario
             </h1>
@@ -206,11 +208,10 @@ export const NewUser: React.FC<NewUserProps> = ({ onClose, onUserAdded }) => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
-
               </div>
             </div>
 
-            {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
+            {error && <p className="mt-4 text-red-500 text-sm text-center">{error}</p>}
 
             <button
               onClick={handleAddUser}

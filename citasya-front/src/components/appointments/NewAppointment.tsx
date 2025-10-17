@@ -240,12 +240,11 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
 
 
   return ReactDOM.createPortal(
-    <main className="fixed inset-0 z-50 flex items-center justify-center " style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <div className="max-w-2xl w-full mx-4 sm:mx-6 md:mx-auto">
-        <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl">
-          <header className="flex justify-between items-center w-full">
-            <div className="flex-1"></div>
-            <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+    <main className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
+      <div className="w-full max-w-2xl mx-auto sm:mx-4">
+        <div className="flex flex-col py-6 px-4 sm:py-8 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-2xl sm:rounded-[30px] shadow-2xl">
+          <header className="flex justify-between items-center w-full mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium text-left text-[#447F98] flex-1" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
               Nueva Cita
             </h1>
             <button
@@ -256,10 +255,11 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
               <VscChromeClose className="inline-block w-6 h-6" />
             </button>
           </header>
-          <form className="flex flex-col mt-8 w-full text-neutral-600">
-            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-            
-            <div className="flex flex-wrap gap-10 max-md:flex-col">
+          <form className="flex flex-col w-full text-neutral-600">
+
+            {error && <p className="text-red-500 text-center mb-3 text-sm sm:text-base">{error}</p>}
+
+            <div className="flex flex-wrap gap-6 sm:gap-8 max-md:flex-col">
               <ServiceFormField
                 label="Documento Cliente:"
                 placeholder="Ingresa cédula o pasaporte..."
@@ -267,7 +267,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="clientDocumentId"
                 value={formData.clientDocumentId || initialDocumentId || ''}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
               <ServiceFormField
                 label="Especialidad:"
@@ -276,11 +276,11 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="specialtyId"
                 value={formData.specialtyId}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
             </div>
 
-            <div className="flex flex-wrap gap-10 mt-6 max-md:flex-col">
+            <div className="flex flex-wrap gap-6 sm:gap-8 mt-6 max-md:flex-col">
               <ServiceFormField
                 label="Servicio:"
                 placeholder="Selecciona un servicio"
@@ -288,7 +288,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="serviceId"
                 value={formData.serviceId}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
               <ServiceFormField
                 label="Especialista:"
@@ -297,11 +297,11 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="workerId"
                 value={formData.workerId}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
             </div>
 
-            <div className="flex flex-wrap gap-10 mt-6 max-md:flex-col">
+            <div className="flex flex-wrap gap-6 sm:gap-8 mt-6 max-md:flex-col">
               <ServiceFormField
                 label="Fecha:"
                 placeholder="Selecciona una fecha"
@@ -309,7 +309,7 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
               <ServiceFormField
                 label="Hora:"
@@ -318,14 +318,14 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
                 name="hour"
                 value={formData.hour}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className="flex-1 w-full"
               />
             </div>
 
             <button
               onClick={e => { e.preventDefault(); handleAddAppointment(); }}
               type="button"
-              className="flex justify-center self-center px-11 py-5 mt-10 max-w-full text-sm font-bold text-center text-white bg-[#447F98] rounded-[40px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] w-[149px] max-md:px-5 hover:bg-[#629BB5] transition-colors duration-200"
+              className="w-full sm:w-auto self-center px-8 py-4 mt-8 text-sm sm:text-base font-bold text-white bg-[#447F98] rounded-3xl shadow-md hover:bg-[#629BB5] transition-colors duration-200 disabled:opacity-60"
               style={{ fontFamily: 'Poppins, sans-serif' }}
               disabled={loading}
             >

@@ -137,15 +137,12 @@ export const EditWorker: React.FC<EditSpecialistProps> = ({
   }));
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0  flex items-center justify-center z-50 bg-neutral-300/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <main className="max-w-[679px] w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-800/50 backdrop-blur-sm p-4 sm:p-6">
+      <main className="bg-neutral-100 rounded-[30px] shadow-2xl w-[95%] sm:w-[85%] md:max-w-[679px] max-h-[90vh] overflow-y-auto">
         <div className="flex flex-col py-9 w-full bg-neutral-100 rounded-[30px] shadow-lg">
           <div className="flex flex-row justify-between items-center w-full px-10">
             <div className="flex-1"></div>
-            <h1
-              className="text-4xl font-medium leading-none text-center text-[#447F98]"
-              style={{ fontFamily: 'Roboto Condensed, sans-serif' }}
-            >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
               Editar Perfil Especialista
             </h1>
             <button

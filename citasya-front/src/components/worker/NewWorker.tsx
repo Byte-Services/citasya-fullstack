@@ -186,25 +186,18 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
 
 
   return (
-    <main style={{ fontFamily: 'Poppins, sans-serif'}}>
-      <div className="max-w-xl w-full mx-4 sm:mx-6 md:mx-auto">
-        <div className="flex flex-col py-9 px-6 sm:px-10 md:px-12 w-full bg-neutral-100 rounded-[30px] shadow-2xl">
-          <header className="flex justify-between items-center w-full">
-            <div className="flex-1"></div>
-            <h1 className="text-4xl font-medium leading-none text-center text-[#447F98]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-              Nuevo Especialista
-            </h1>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              className="flex-1 text-right text-neutral-600 hover:text-neutral-800 transition-colors duration-200"
-            >
-              <VscChromeClose className="inline-block w-6 h-6" />
-            </button>
-          </header>
-
-          <form className="flex flex-col mt-8 w-full text-neutral-600">
-            <div className="flex flex-wrap gap-10 max-md:flex-col">
+    <div className="fixed inset-0 z-50 bg-neutral-800/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-neutral-100 rounded-[30px] shadow-2xl w-[95%] sm:w-[85%] md:max-w-xl max-h-[90vh] overflow-y-auto py-8 px-6 sm:px-8 md:px-12" style={{ fontFamily: 'Poppins, sans-serif' }}>
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium text-[#447F98] text-center flex-1" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+            Nuevo Especialista
+          </h1>
+          <button onClick={onClose} className="text-neutral-600 hover:text-neutral-800 transition-colors">
+            <VscChromeClose className="w-6 h-6" />
+          </button>
+        </header>
+        <form className="flex flex-col gap-6 text-neutral-600">
+          <div className="flex flex-wrap gap-6 max-md:flex-col w-full">
               <ServiceFormField<string>
                 label="Nombre del especialista:"
                 placeholder="Ingresa nombre..."
@@ -212,7 +205,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className='flex-1'
               />
               <ServiceFormField<string>
                 label="Cédula:"
@@ -221,11 +214,11 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 name="documentId"
                 value={formData.documentId}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className='flex-1'
               />
             </div>
 
-            <div className="flex flex-wrap gap-10 mt-6 max-md:flex-col">
+            <div className="flex flex-wrap gap-6 max-md:flex-col">
               <ServiceFormField<string>
                 label="Teléfono:"
                 placeholder="xxxxxxxxxx"
@@ -233,7 +226,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className='flex-1'
               />
               <ServiceFormField<string>
                 label="Email:"
@@ -242,11 +235,11 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className='flex-1'
               />
             </div>
 
-            <div className="flex flex-wrap gap-10 mt-6 max-md:flex-col">
+            <div className="flex flex-wrap gap-6 max-md:flex-col">
               <ServiceFormField<number>
                 label="Especialidades:"
                 options={availableSpecialties}
@@ -254,7 +247,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 value={selectedSpecialties}
                 onChange={handleSpecialtyChange}
                 placeholder="Selecciona especialidades"
-                className="flex-1 grow shrink-0 basis-0 w-fit"
+                className='flex-1'
               />
 
               <ServiceFormField<number>
@@ -264,8 +257,8 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
                 value={formData.services}
                 onChange={handleServicesChange}
                 placeholder="Selecciona servicios"
-                className="flex-1 grow shrink-0 basis-0 w-fit"
                 disabled={selectedSpecialties.length === 0}
+                className='flex-1'
               />
             </div>
 
@@ -274,7 +267,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
             <button
               onClick={handleAddSpecialist}
               type="button"
-              className="flex justify-center self-center px-11 py-5 mt-10 max-w-full text-sm font-semibold text-center text-white whitespace-nowrap bg-[#447F98] rounded-[40px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] w-[149px] max-md:px-5 hover:bg-[#629BB5] transition-colors duration-200"
+              className="self-center mt-6 px-10 py-3 bg-[#447F98] text-white rounded-full text-sm sm:text-base font-semibold hover:bg-[#629BB5] transition-colors"
               style={{ fontFamily: 'Poppins, sans-serif' }}
               disabled={loading}
             >
@@ -283,6 +276,5 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
           </form>
         </div>
       </div>
-    </main>
   );
 };
