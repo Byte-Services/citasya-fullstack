@@ -185,7 +185,7 @@ export function SpecialistList() {
             <h2 className="px-8 py-3 text-neutral-600">Lista de Especialistas</h2>
           </div>
 
-          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-300px)]">
+          <div className="flex flex-col ">
             {currentSpecialists.map((spec) => (
               <SpecialistCard
                 key={spec.id}

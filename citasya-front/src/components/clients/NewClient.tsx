@@ -108,10 +108,8 @@ export const NuevoCliente: React.FC<NuevoClienteProps> = ({ onClose }) => {
         </header>
 
         <form onSubmit={(e) => { e.preventDefault(); handleAddClient(); }} className="flex flex-col gap-5 text-neutral-600">
-          <div className="flex flex-col sm:flex-row gap-5">
-            <ServiceFormField label="Nombre del cliente:" name="nombre" placeholder="Ingresa nombre..." value={formData.nombre} onChange={handleChange} />
-            <ServiceFormField label="Cédula:" name="cedula" placeholder="Ingresa cédula..." value={formData.cedula} onChange={handleChange} />
-          </div>
+           <ServiceFormField label="Nombre del cliente:" name="nombre" placeholder="Ingresa nombre..." value={formData.nombre} onChange={handleChange} />
+          <ServiceFormField label="Cédula:" name="cedula" placeholder="Ingresa cédula..." value={formData.cedula} onChange={handleChange} />
           <ServiceFormField label="Teléfono:" name="telefono" placeholder="584141234567" value={formData.telefono} onChange={handleChange} />
           <ServiceFormField label="Nota:" name="nota" type="textarea" placeholder="Escribe una nota..." value={formData.nota} onChange={handleChange} />
 

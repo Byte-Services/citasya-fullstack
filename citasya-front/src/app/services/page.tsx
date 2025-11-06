@@ -305,7 +305,7 @@ const Services: React.FC = () => {
           onDeleteService={handleDeleteService}
         />
 
-        <div className="mb-50" />
+        <div className="pb-50" />
 
 
       {/* Modal de nuevo servicio */}

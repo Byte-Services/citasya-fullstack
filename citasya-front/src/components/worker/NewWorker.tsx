@@ -221,7 +221,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
             <div className="flex flex-wrap gap-6 max-md:flex-col">
               <ServiceFormField<string>
                 label="Teléfono:"
-                placeholder="xxxxxxxxxx"
+                placeholder="04141234567"
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -230,7 +230,7 @@ export const NewSpecialist: React.FC<NewSpecialistProps> = ({ onClose, onWorkerA
               />
               <ServiceFormField<string>
                 label="Email:"
-                placeholder="xxxxxxxxxx"
+                placeholder="ejemplo@gmail.com"
                 type="email"
                 name="email"
                 value={formData.email}
