@@ -185,13 +185,13 @@ export const NewAppointment: React.FC<NewAppointmentProps> = ({ onClose, initial
       }
 
       // Validación de fecha futura
-      //const selectedDateTime = new Date(`${formData.date}T${formData.hour}`);
-      //const now = new Date();
-      //if (selectedDateTime < now) {
-      //  setError("No se puede seleccionar una fecha/hora pasada");
-      //  setLoading(false);
-      //  return;
-      //}
+      const selectedDateTime = new Date(`${formData.date}T${formData.hour}`);
+      const now = new Date();
+      if (selectedDateTime < now) {
+        setError("No se puede seleccionar una fecha/hora pasada");
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(`${API_URL}/appointments`, {
         method: 'POST',

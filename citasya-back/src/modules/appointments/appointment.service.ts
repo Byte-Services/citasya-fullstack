@@ -132,7 +132,7 @@ export class AppointmentsService {
             savedAppointment = await queryRunner.manager.save(appointment);
 
             // 4. Crear el evento en Google Calendar
-            const startDateTime = new Date(`${data.date}T${data.hour}:00`);
+            const startDateTime = new Date(`${data.date}T${data.hour}:00-04:00`);
             const calendarDuration = service.minutes_duration || 60;
             const endDateTime = new Date(
                 startDateTime.getTime() + calendarDuration * 60 * 1000

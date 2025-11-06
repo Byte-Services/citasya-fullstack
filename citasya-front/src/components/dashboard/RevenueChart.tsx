@@ -90,7 +90,7 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
 
     try {
         const [year, month, day] = val.split("-");
-        const d = new Date(Number(year), Number(month) - 1, Number(day));
+        const d = new Date(Number(year), Number(month) - 1, Number(day)+1);
 
         return new Intl.DateTimeFormat("es-VE", {
         timeZone: "America/Caracas",
@@ -112,7 +112,7 @@ export function RevenueChart({ startDate, endDate }: { startDate: string; endDat
     let fecha = label ?? "";
     try {
         const [year, month, day] = (label ?? "").split("-");
-        const d = new Date(Number(year), Number(month) - 1, Number(day));
+        const d = new Date(Number(year), Number(month) - 1, Number(day)+1);
         fecha = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
     } catch {}
 
