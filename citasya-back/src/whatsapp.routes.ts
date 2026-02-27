@@ -7,6 +7,29 @@ import { AppDataSource } from './data-source.js'; // <--- Importa el origen de d
 
 const router = Router();
 
+/**
+ * @swagger
+ * /whatsapp/webhook:
+ *   post:
+ *     summary: Webhook para recibir mensajes de WhatsApp
+ *     description: Recibe mensajes entrantes de Twilio WhatsApp y responde usando el agente conversacional
+ *     tags: [WhatsApp]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             $ref: '#/components/schemas/WhatsAppWebhook'
+ *     responses:
+ *       200:
+ *         description: Mensaje procesado correctamente
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/webhook', async (req: Request, res: Response) => {
     const incomingMsg: string = req.body.Body;
     const sender: string = req.body.From.replace('whatsapp:+', '');
