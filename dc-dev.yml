@@ -1,0 +1,48 @@
+services:
+  frontend:
+    build:
+      context: ./citasya-front
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    volumes:
+      - ./citasya-front:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./citasya-back
+      dockerfile: Dockerfile
+    env_file:
+      - ./citasya-back/.env
+    ports:
+      - "3000:4000"
+    depends_on:
+      - db
+    networks:
+      - app-network
+    volumes:
+      - ./citasya-back:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: citasya
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
