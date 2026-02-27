@@ -16,6 +16,7 @@ import appointmentRoutes from './modules/appointments/appointment.routes.js';
 import clientRoutes from './modules/clients/client.routes.js';
 //import userRoutes from './modules/users/user.routes.js';
 //import workerRoutes from './modules/workers/worker.routes.js';
+import { setupSwagger } from './swagger.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -41,6 +42,9 @@ const PORT = process.env.PORT || 4000;
 AppDataSource.initialize()
     .then(() => {
         console.log("Data Source has been initialized!");
+
+        // Configura Swagger
+        setupSwagger(app);
 
         // Conecta los routers modulares a sus prefijos de ruta
         app.use('/whatsapp', whatsappRoutes);
