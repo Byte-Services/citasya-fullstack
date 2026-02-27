@@ -1,16 +1,16 @@
 services:
-  # frontend:
-  #   build:
-  #     context: ./citasya-front
-  #   ports:
-  #     - "3001:3000"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - app-network
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
+  frontend:
+    build:
+      context: ./citasya-front
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    volumes:
+      - ./citasya-front:/app
+      - /app/node_modules
 
   backend:
     build:
