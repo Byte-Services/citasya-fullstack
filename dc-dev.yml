@@ -4,6 +4,7 @@ services:
       context: ./citasya-front
     ports:
       - "3001:3000"
+    env_file: ./citasya-front/.env
     depends_on:
       - backend
     networks:

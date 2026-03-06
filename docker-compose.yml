@@ -14,11 +14,8 @@ services:
       context: ./citasya-back
     ports:
       - "3000:3000"
-    environment:
-      DB_HOST: db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: citasya
+    env_file:
+      - ./citasya-back/.envs/.env.core
     depends_on:
       - db
     networks:
@@ -26,10 +23,8 @@ services:
 
   db:
     image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: citasya
+    env_file:
+      - ./citasya-back/.envs/.env.postgres
     ports:
       - "5432:5432"
     volumes:
