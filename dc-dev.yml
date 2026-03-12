@@ -18,7 +18,7 @@ services:
       context: ./citasya-back
       dockerfile: Dockerfile
     env_file:
-      - ./citasya-back/.env
+      - ./citasya-back/.envs/.env.core
     ports:
       - "3000:4000"
     depends_on:
@@ -31,10 +31,8 @@ services:
 
   db:
     image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: citasya
+    env_file:
+      - ./citasya-back/.envs/.env.postgres
     ports:
       - "5432:5432"
     volumes:
