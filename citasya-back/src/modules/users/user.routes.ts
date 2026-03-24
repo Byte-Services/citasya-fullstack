@@ -6,6 +6,61 @@ const userController = new UserController();
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID único del usuario
+ *         name:
+ *           type: string
+ *           description: Nombre del usuario
+ *         email:
+ *           type: string
+ *           description: Correo electrónico (único)
+ *         phone:
+ *           type: string
+ *           nullable: true
+ *           description: Teléfono del usuario
+ *         is_active:
+ *           type: boolean
+ *           description: Estado de la cuenta
+ *         role:
+ *           type: string
+ *           enum: [Admin, Coordinator]
+ *           description: Rol jerárquico del usuario
+ *         center_id:
+ *           type: integer
+ *           nullable: true
+ *           description: ID del centro asignado
+ *     UserInput:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password_hash
+ *         - role
+ *       properties:
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *         phone:
+ *           type: string
+ *         password_hash:
+ *           type: string
+ *           description: Contraseña en texto plano a encriptar
+ *         is_active:
+ *           type: boolean
+ *           default: true
+ *         role:
+ *           type: string
+ *           enum: [Admin, Coordinator]
+ *         center_id:
+ *           type: integer
+ *
  * /admin/users:
  *   get:
  *     summary: Obtener todos los usuarios
@@ -50,6 +105,12 @@ router.get('/:id', (req, res) => userController.getUserById(req, res));
  *     summary: Crear un nuevo usuario
  *     description: Crea un nuevo usuario (encriptando su contraseña) en el sistema
  *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserInput'
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente

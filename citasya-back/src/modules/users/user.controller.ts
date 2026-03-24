@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from './user.services.js';
+import { CreateUserDto, UpdateUserDto } from './user.dto.js';
+import { z } from 'zod';
 
 export class UserController {
     private userService: UserService;
@@ -49,10 +51,16 @@ export class UserController {
      */
     public async createUser(req: Request, res: Response): Promise<void> {
         try {
-            const userData = req.body;
+            // Validamos los datos de entrada con Zod
+            const userData = CreateUserDto.parse(req.body);
+            
             const newUser = await this.userService.createUser(userData);
             res.status(201).json(newUser);
         } catch (error) {
+            if (error instanceof z.ZodError) {
+                res.status(400).json({ message: "Datos inválidos", errors: error.errors });
+                return;
+            }
             console.error("Error creating user:", error);
             res.status(500).json({ message: "Error al crear el usuario." });
         }
@@ -65,7 +73,10 @@ export class UserController {
     public async updateUser(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            const userData = req.body;
+            
+            // Validamos los datos de entrada con Zod (partial)
+            const userData = UpdateUserDto.parse(req.body);
+            
             const updatedUser = await this.userService.updateUser(Number(id), userData);
 
             if (!updatedUser) {
@@ -75,6 +86,10 @@ export class UserController {
 
             res.status(200).json(updatedUser);
         } catch (error) {
+            if (error instanceof z.ZodError) {
+                res.status(400).json({ message: "Datos inválidos", errors: error.errors });
+                return;
+            }
             console.error(`Error updating user with id ${req.params.id}:`, error);
             res.status(500).json({ message: "Error al actualizar el usuario." });
         }
