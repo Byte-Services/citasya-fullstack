@@ -12,6 +12,14 @@ const options: swaggerJsdoc.Options = {
         },
         servers: [
             {
+                url: '/',
+                description: 'Servidor Actual',
+            },
+            {
+                url: 'http://localhost:3000',
+                description: 'Servidor con Docker',
+            },
+            {
                 url: 'http://localhost:4000',
                 description: 'Servidor de desarrollo',
             },
@@ -117,6 +125,8 @@ const options: swaggerJsdoc.Options = {
             },
         },
         tags: [
+            { name: 'Auth', description: 'Autenticación y tokens JWT' },
+            { name: 'Users', description: 'Gestión de usuarios y administradores' },
             { name: 'WhatsApp', description: 'Endpoints del webhook de WhatsApp' },
             { name: 'Specialties', description: 'Gestión de especialidades' },
             { name: 'Services', description: 'Gestión de servicios' },
