@@ -1,6 +1,6 @@
 import React from 'react'
 
-type InputVariant = 'text' | 'password'
+type InputVariant = 'text' | 'password' | 'time' | 'date'
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
 	variant?: InputVariant
@@ -18,7 +18,11 @@ export default function Input({
 	id,
 	...props
 }: InputProps) {
-	const inputType = variant === 'password' ? 'password' : 'text'
+	let inputType: string;
+	if (variant === 'password') inputType = 'password';
+	else if (variant === 'time') inputType = 'time';
+	else if (variant === 'date') inputType = 'date';
+	else inputType = 'text';
 
 	return (
 		<div className={containerClassName}>
