@@ -14,15 +14,20 @@ import serviceRoutes from './modules/services/service.routes.js';
 import appointmentRoutes from './modules/appointments/appointment.routes.js';
 //import centerRoutes from './modules/centers/center.routes.js';
 import clientRoutes from './modules/clients/client.routes.js';
-//import userRoutes from './modules/users/user.routes.js';
+import userRoutes from './modules/users/user.routes.js';
 //import workerRoutes from './modules/workers/worker.routes.js';
+import authRoutes from './modules/auth/auth.routes.js';
 import { setupSwagger } from './swagger.js';
-
+import passport from 'passport';
+import { jwtStrategy } from './modules/auth/jwt.strategy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+passport.use(jwtStrategy);
+app.use(passport.initialize());
 
 app.use(cors({
     origin: ['http://localhost:3001', 'http://localhost:3000'],
@@ -47,6 +52,7 @@ AppDataSource.initialize()
         setupSwagger(app);
 
         // Conecta los routers modulares a sus prefijos de ruta
+        app.use('/auth', authRoutes);
         app.use('/whatsapp', whatsappRoutes);
         app.use('/admin/specialties', specialtyRoutes);
         app.use('/admin/services', serviceRoutes);
@@ -54,7 +60,7 @@ AppDataSource.initialize()
         //app.use('/admin/centers', centerRoutes);
         app.use('/admin/clients', clientRoutes);
         //app.use('/admin/workers', workerRoutes);
-        //app.use('/admin/users', userRoutes);
+        app.use('/admin/users', userRoutes);
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
