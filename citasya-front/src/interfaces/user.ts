@@ -3,7 +3,7 @@
 import { BaseEntity } from "./common";
 
 
-export type UserRole = 'ADMIN' | 'COORDINATOR' | 'SUPERVISOR';
+export type UserRole = 'ADMIN';
 
 export interface User extends BaseEntity {
   firstName: string;
