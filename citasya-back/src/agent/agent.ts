@@ -19,7 +19,7 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
     const model = new ChatOpenAI({
         temperature: 0,
         openAIApiKey: process.env.OPENAI_API_KEY,
-        modelName: "gpt-3.5-turbo"
+        modelName: "gpt-4o-mini"
     });
 
     // Array de herramientas disponibles para el agente
