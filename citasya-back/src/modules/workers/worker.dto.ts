@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { WorkerStatus } from "./worker.model.js";
 
-// DTO para la creación de un trabajador
 export const CreateWorkerDto = z.object({
     name: z.string({ required_error: "El nombre es requerido" }).min(1, "El nombre no puede estar vacío"),
     documentId: z.string().optional().nullable(),
@@ -13,9 +12,7 @@ export const CreateWorkerDto = z.object({
     center_id: z.number().int().positive().optional().nullable(),
 });
 
-// DTO para la actualización de un trabajador
 export const UpdateWorkerDto = CreateWorkerDto.partial();
 
-// Tipos inferidos de Zod
 export type CreateWorkerInput = z.infer<typeof CreateWorkerDto>;
 export type UpdateWorkerInput = z.infer<typeof UpdateWorkerDto>;
