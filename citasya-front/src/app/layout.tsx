@@ -1,36 +1,27 @@
-import type { Metadata } from "next";
-import { Poppins, Roboto_Condensed } from "next/font/google";
-import "./globals.css";
-import {Header} from "../components/Header";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import Script from 'next/script'
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "700"], 
-  variable: '--font-poppins',
-});
-
-const roboto_condensed = Roboto_Condensed({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: '--font-roboto-condensed',
-});
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  title: "CitasYa Admin",
-  description: "Panel de administración para el bot de citas.",
-};
+  title: 'Citas ya - Sistema de gestión de citas',
+  description: 'Sistema de gestión de citas para locales de belleza y bienestar. Organiza tus citas, clientes y equipo en un solo lugar.',
+}
+
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="es" className={`${poppins.variable} ${roboto_condensed.variable}`}>
-      <body className="bg-neutral-100">
-        <Header />
-        {children}
+    <html lang="es" className="h-full bg-gray-50" style={{ colorScheme: 'light' }}>
+      <body className={`${inter.className} h-full bg-gray-50 text-gray-900`}>
+        <Script id="remove-fusion" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: "try{document.documentElement.classList.remove('fusion-extension-loaded');document.body.classList.remove('fusion-extension-loaded');}catch(e){}" }} />
+            {children}
       </body>
     </html>
-  );
+  )
 }

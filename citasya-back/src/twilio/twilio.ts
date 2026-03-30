@@ -5,7 +5,7 @@ const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_T
 export async function sendWhatsAppMessage(sender: string, message: string): Promise<void> {
   try {
     await client.messages.create({
-      from: process.env.TWILIO_PHONE_NUMBER!,
+      from: 'whatsapp:' + process.env.TWILIO_PHONE_NUMBER!,
       body: message,
       to: `whatsapp:+${sender}`
     });
