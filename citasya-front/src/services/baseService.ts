@@ -9,7 +9,7 @@ export class BaseService<T> {
     public service = apiService;
     public baseEndpoint: string;
     constructor(baseEndpoint: string) {
-        this.baseEndpoint = baseEndpoint;
+        this.baseEndpoint = 'admin/' + baseEndpoint;
     }
     async getAll(filters?: BaseFilters & Record<string, string>): Promise<PaginatedResponse<T>> {
         const params = new URLSearchParams();
@@ -23,18 +23,24 @@ export class BaseService<T> {
         return {
             success: true,
             data: {
-                edges: response.response.data.edges,
-                paginated: response.response.data.paginated
+                edges: response as any,
+                paginated: {
+                    total: 0,
+                    cursor: '',
+                    hasMore: false,
+                    totalPages: 0,
+                    totalPerPage: 0
+                }
             },
             pagination: {
                 page: filters?.page || 1,
                 limit: filters?.limit || 10,
-                total: response.response.data.paginated.total,
-                totalPages: response.response.data.paginated.totalPages
+                total: 0,
+                totalPages: 0
             }
         };
     }
-    async getById(id: string): Promise<T> {
+    async getById(id: number): Promise<T> {
         const response = await this.service.get<ApiResponse<T>>(`/${this.baseEndpoint}/${id}`);
         return response.response.data;
     }
@@ -42,11 +48,11 @@ export class BaseService<T> {
         const response = await this.service.post<ApiResponse<T>>(`/${this.baseEndpoint}`, data);
         return response.response.data;
     }
-    async update(id: string, data: Partial<T>): Promise<T> {
+    async update(id: number, data: Partial<T>): Promise<T> {
         const response = await this.service.put<ApiResponse<T>>(`/${this.baseEndpoint}/${id}`, data);
         return response.response.data;
     }
-    async delete(id: string): Promise<void> {
+    async delete(id: number): Promise<void> {
         await this.service.delete<ApiResponse<void>>(`/${this.baseEndpoint}/${id}`);
     }
 }

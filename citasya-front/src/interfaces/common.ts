@@ -27,7 +27,7 @@ export interface PaginatedResponse<T>
 }
 
 export interface BaseEntity {
-  id: string;
+  id: number;
   createdAt: string;
   updatedAt: string;
   deleted_at?: string;
