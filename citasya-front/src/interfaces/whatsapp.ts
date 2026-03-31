@@ -7,7 +7,7 @@ export interface WhatsAppWebhookResponse {
 }
 
 export interface WhatsAppWebhook extends BaseEntity {
-    id: string;
+    id: number;
     message: string;
     receivedAt: string;
 }
