@@ -1,14 +1,6 @@
 
 import { BaseEntity } from './common';
 
-export interface ServiceResponse {
-    name: string;
-    description: string;
-    minutes_duration: number;
-    price: number;
-    status: string;
-    specialty_id: number;
-}
 
 export interface EventsInterface {
     title: string,

@@ -1,21 +1,6 @@
 
 import { BaseEntity } from './common';
 
-export interface ClientResponse {
-  name: string;
-    documentId: string;
-    phone: string;
-    notes: string;
-    center_id: number;
-}
-
-export interface ClientInterface {
-  name: string;
-    documentId: string;
-    phone: string;
-    notes: string;
-    center_id: number;
-}
 
 export interface Client extends BaseEntity {
     name: string;
@@ -34,11 +19,11 @@ export interface CreateClientRequest {
 }
 
 export interface UpdateClientRequest {
-  name: string;
-    documentId: string;
-    phone: string;
-    notes: string;
-    center_id: number;
+  name?: string;
+    documentId?: string;
+    phone?: string;
+    notes?: string;
+    center_id?: number;
 }
 
 export interface ClientFilters {

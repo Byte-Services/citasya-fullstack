@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PaginatedResponse } from "@/interfaces";
 import { apiService } from "./api";
 import { ApiPaginatedResponse, ApiResponse } from "@/types/api";

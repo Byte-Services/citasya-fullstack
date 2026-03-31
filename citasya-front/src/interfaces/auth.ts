@@ -10,7 +10,14 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: User;
+  refreshToken?: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role?: string;
+    // Otros campos según la respuesta de tu backend
+  };
 }
 
 export interface RefreshTokenRequest {

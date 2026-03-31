@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Appointment, AppointmentFilters, CreateAppointmentRequest, UpdateAppointmentRequest } from "@/interfaces/appointment";
 import { appointmentService } from "@/services/appointments.service";
 import { createBaseStore } from "./base.Store";

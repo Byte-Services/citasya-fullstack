@@ -2,46 +2,46 @@
 
 import { BaseEntity } from "./common";
 
-
-export type UserRole = 'ADMIN';
+export type UserRole = 'Admin' | 'ADMIN';
 
 export interface User extends BaseEntity {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
+  password_hash: string;
+  is_active: boolean;
   role: UserRole;
-  passwordHash: string;
-  isActive: boolean;
+  center_id: number;
 }
 
 export interface CreateUserRequest {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
-  password: string;
+  password_hash: string;
+  is_active: boolean;
   role: UserRole;
-  isActive: boolean;
+  center_id: number;
 }
 
 export interface UpdateUserRequest {
-  firstName?: string;
-  lastName?: string;
+  name?: string;
   email?: string;
   phone?: string;
+  password_hash?: string;
+  is_active?: boolean;
   role?: UserRole;
-  isActive?: boolean;
+  center_id?: number;
 }
 
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
-} 
+}
 
 export interface UserFilters {
   search?: string;
   role?: UserRole;
   page?: number;
   limit?: number;
-} 
+}
