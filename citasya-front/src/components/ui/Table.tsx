@@ -1,23 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import Dropdown from "@/components/common/Dropdown";
 import { SearchIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { MailIcon, PhoneIcon, CalendarIcon } from "lucide-react";
 
+
 type Client = {
   id: number;
   name: string;
-  email: string;
   phone: string;
   lastVisit: string;
   visits: number;
   status: string;
   notes?: string;
+  documentId: string;
+  center_id: number | string;
 };
 
 interface TableProps {
-  clients: Client[];
-  onProfile: (client: Client) => void;
+  data: any;
+  onRowClick: any;
   searchTerm: string;
   setSearchTerm: (v: string) => void;
 }
@@ -48,12 +51,11 @@ const getStatusColor = (status: string) => {
 };
 
 
-export const Table: React.FC<TableProps> = ({ clients, onProfile, searchTerm, setSearchTerm }) => {
+export const Table: React.FC<TableProps> = ({ data, onRowClick, searchTerm, setSearchTerm }) => {
   const [statusFilter, setStatusFilter] = React.useState("");
-  const filtered = clients.filter(client => {
+  const filtered = data.filter((client: any) => {
     const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter ? client.status.toLowerCase() === statusFilter : true;
     return matchesSearch && matchesStatus;
@@ -87,11 +89,11 @@ export const Table: React.FC<TableProps> = ({ clients, onProfile, searchTerm, se
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
-        {filtered.map((client) => (
+        {filtered.map((client: any) => (
           <motion.div
             key={client.id}
             variants={itemVariants}
-            onClick={() => onProfile(client)}
+            onClick={() => onRowClick(client)}
             className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
           >
             <div className="p-6">
@@ -111,14 +113,24 @@ export const Table: React.FC<TableProps> = ({ clients, onProfile, searchTerm, se
               </h3>
 
               <div className="space-y-2 mt-4">
-                <div className="flex items-center text-sm text-slate-500">
-                  <MailIcon className="w-4 h-4 mr-2 text-slate-400" />
-                  <span className="truncate">{client.email}</span>
-                </div>
+                {/* Email eliminado */}
                 <div className="flex items-center text-sm text-slate-500">
                   <PhoneIcon className="w-4 h-4 mr-2 text-slate-400" />
                   <span>{client.phone}</span>
                 </div>
+                <div className="flex items-center text-sm text-slate-500">
+                  <span className="font-semibold mr-2">DNI:</span>
+                  <span>{client.documentId}</span>
+                </div>
+                <div className="flex items-center text-sm text-slate-500">
+                  <span className="font-semibold mr-2">Centro:</span>
+                  <span>{client.center_id === 1 ? "Madrid" : client.center_id === 2 ? "Barcelona" : client.center_id}</span>
+                </div>
+                {client.notes && (
+                  <div className="flex items-center text-xs text-slate-400 italic mt-1">
+                    <span>{client.notes}</span>
+                  </div>
+                )}
               </div>
             </div>
 
