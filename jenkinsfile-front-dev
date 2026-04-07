@@ -1,0 +1,292 @@
+import groovy.json.JsonOutput
+
+pipeline {
+    agent any
+    environment {
+        REMOTE_HOST = '137.184.158.15'
+        DOCKER_REGISTRY = 'registry.bit.legrev.xyz'
+        DOCKER_IMAGE = 'citasya-frontend'
+        REGISTRY_CREDENTIALS_ID = 'docker-registry-credentials'
+        SSH_CREDENTIALS_ID = 'jenkins-prestaging'
+        'registry.bit.legrev.xyz'
+        SSH_CD_HOST = '137.184.158.15'
+        BRANCH = 'develop'
+        VERSION = '0.0.1'
+        APP_NAME = 'CITASYA-FRONTEND'
+        ENVIRONMENT = 'DEVELOP'
+        PATH_BUILD = 'citasya-fullstack/citasya-front'
+        PATH_DEPLOY = './citasya-infra'
+        PATH_DOCKERFILE = './citasya-front/docker/Dockerfile.dev'
+        PATH_DOCKER_COMPOSE_DEPLOY = 'docker-compose.yml'
+        CONTAINER_NAME = 'CITASYA_FRONTEND'
+        LARK_WEBHOOK_URL = 'https://open.larksuite.com/open-apis/bot/v2/hook/d9eac110-0742-45fb-819c-88a848fa95f8'
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Notify start build'){
+            steps {
+                script {
+                    def commitRange = sh(script: 'git log --pretty=format:"%h" -n 2 | xargs | awk \'{print \$2 "^.."\$1}\'', returnStdout: true).trim()
+                    def commitDetails = sh(script: 'git log --pretty=format:"- %h: %s [%an]" ' + commitRange, returnStdout: true).trim()
+
+                    def message = [
+                        msg_type: 'interactive',
+                        card: [
+                            config: [
+                                wide_screen_mode: true
+                            ],
+                            header: [   
+                                title: [
+                                    tag: 'plain_text',
+                                    content: "${APP_NAME} - ${ENVIRONMENT} - Start Build: ${env.JOB_NAME} #${env.BUILD_NUMBER} - VERSION: ${VERSION}"
+                                ],
+                                template: 'blue'
+                            ],
+                            elements: [
+                                [
+                                    tag: 'div',
+                                    text: [
+                                        tag: 'lark_md',
+                                        content: "**🔔 Información del Despliegue**\n\n**Proyecto:** ${APP_NAME}\n**Entorno:** ${ENVIRONMENT}\n**Rama:** ${BRANCH}\n**Versión:** ${VERSION}\n\n**Cambios Recientes:**\n${commitDetails}"
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+
+                    echo "JSON Message: ${JsonOutput.toJson(message)}"
+
+                    httpRequest(
+                        httpMode: 'POST',
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: JsonOutput.toJson(message),
+                        url: "${LARK_WEBHOOK_URL}"
+                    )
+                }
+            }
+        }
+
+        stage('Getting Last Version') {
+            steps {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                            sh """
+                                ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST} << EOF
+                                cd ${PATH_BUILD}
+                                git checkout ${BRANCH}
+                                git pull origin ${BRANCH}
+                                exit
+                                EOF
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build and Push Docker Image') {
+            steps {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                            sh """
+                ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST} << EOF
+                set -e
+                cd ${PATH_BUILD} || { echo "Directory ${PATH_BUILD} not found"; exit 1; }
+
+                echo "Logging into Docker Registry with:"
+                echo "DOCKER_USERNAME: ${DOCKER_USERNAME}"
+                echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
+
+                # Probar login
+                echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${DOCKER_USERNAME}" --password-stdin || { echo "Docker login failed"; exit 1; }
+
+                # Verificar si el login realmente quedó guardado
+                cat ~/.docker/config.json || { echo "Docker config file not found"; exit 1; }
+
+                VERSION=\$(cat VERSION)
+                echo "Registry as ${DOCKER_REGISTRY}"
+                docker build -f ${PATH_DOCKERFILE} -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${VERSION} .
+
+                # Verificar imágenes disponibles
+                docker images | grep ${DOCKER_IMAGE} || { echo "Image not found"; exit 1; }
+
+                echo "HERE IS THE PUSHED VERSION: ${VERSION}"
+                docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${VERSION} || { echo "Docker push failed"; exit 1; }
+
+                    """
+                        }
+                    }
+                }
+            }
+        }
+
+         stage('Notify start deployment'){
+            steps {
+                script {
+                    def commitRange = sh(script: 'git log --pretty=format:"%h" -n 2 | xargs | awk \'{print \$2 "^.."\$1}\'', returnStdout: true).trim()
+                    def commitDetails = sh(script: 'git log --pretty=format:"- %h: %s [%an]" ' + commitRange, returnStdout: true).trim()
+
+                    def message = [
+                        msg_type: 'interactive',
+                        card: [
+                            config: [
+                                wide_screen_mode: true
+                            ],
+                            header: [   
+                                title: [
+                                    tag: 'plain_text',
+                                    content: "${APP_NAME} - ${ENVIRONMENT} - DEPLOYMENT: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+                                ],
+                                template: 'blue'
+                            ],
+                            elements: [
+                                [
+                                    tag: 'div',
+                                    text: [
+                                        tag: 'lark_md',
+                                        content: "**🚀 INICIANDO DESPLIEGUE - ${ENVIRONMENT}**\n\n**Proyecto:** ${APP_NAME}\n**Entorno:** ${ENVIRONMENT}\n**Rama:** ${BRANCH}\n**Versión:** ${VERSION}\n\n**Cambios Recientes:**\n${commitDetails}"
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+
+                    echo "JSON Message: ${JsonOutput.toJson(message)}"
+
+                    httpRequest(
+                        httpMode: 'POST',
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: JsonOutput.toJson(message),
+                        url: "${LARK_WEBHOOK_URL}"
+                    )
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sshagent(credentials: [SSH_CD_CREDENTIALS_ID]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no root@${SSH_CD_HOST} << EOF
+                    echo "Start CD"
+
+                    cd ${PATH_DEPLOY} || { echo "Directory ${PATH_DEPLOY} not found"; exit 1; }
+                    
+                    echo "Pulling images"
+                    docker compose -f ${PATH_DOCKER_COMPOSE_DEPLOY} pull zafra-develop || { echo "Docker compose pull failed"; exit 1; }
+
+                    echo "Stop Backend service"
+                    docker stop ${CONTAINER_NAME} || { echo "Docker stop failed"; exit 1; }
+
+                    echo "Remove Backend container"
+                    docker rm ${CONTAINER_NAME} || { echo "Docker rm failed"; exit 1; }
+
+                    echo "Starting services"
+                    docker compose -f ${PATH_DOCKER_COMPOSE_DEPLOY} up -d --build || { echo "Docker compose up failed"; exit 1; }
+
+                    echo "Check status"
+                    docker ps || { echo "Docker ps failed"; exit 1; }
+
+                    echo "Check logs"
+                    docker logs ${CONTAINER_NAME} || { echo "Docker logs failed"; exit 1; }
+
+                """
+                }
+            }
+        }
+
+    }
+
+    post {
+        success {
+            script {
+                def commitRange = sh(script: 'git log --pretty=format:"%h" -n 2 | xargs | awk \'{print \$2 "^.."\$1}\'', returnStdout: true).trim()
+                def commitDetails = sh(script: 'git log --pretty=format:"- %h: %s [%an]" ' + commitRange, returnStdout: true).trim()
+
+                def message = [
+                    msg_type: 'interactive',
+                    card: [
+                        config: [
+                            wide_screen_mode: true
+                        ],
+                        header: [
+                            title: [
+                                tag: 'plain_text',
+                                content: "${APP_NAME} - ${ENVIRONMENT} - Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER} - VERSION: ${VERSION}"
+                            ],
+                            template: 'green'
+                        ],
+                        elements: [
+                            [
+                                tag: 'div',
+                                text: [
+                                    tag: 'lark_md',
+                                    content: "**Recent Changes:**\n${commitDetails}"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+
+                    echo "JSON Message: ${JsonOutput.toJson(message)}"
+
+                    httpRequest(
+                        httpMode: 'POST',
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: JsonOutput.toJson(message),
+                        url: "${LARK_WEBHOOK_URL}"
+                    )
+            }
+        }
+
+        failure {
+            script {
+                def commitRange = sh(script: 'git log --pretty=format:"%h" -n 2 | xargs | awk \'{print \$2 "^.."\$1}\'', returnStdout: true).trim()
+                def commitDetails = sh(script: 'git log --pretty=format:"- %h: %s [%an]" ' + commitRange, returnStdout: true).trim()
+
+                def message = [
+                    msg_type: 'interactive',
+                    card: [
+                        config: [
+                            wide_screen_mode: true
+                        ],
+                        header: [
+                            title: [
+                                tag: 'plain_text',
+                                content: "${APP_NAME} - ${ENVIRONMENT} - Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+                            ],
+                            template: 'red'
+                        ],
+                        elements: [
+                            [
+                                tag: 'div',
+                                text: [
+                                    tag: 'lark_md',
+                                    content: "**Recent Changes:**\n${commitDetails}"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+
+                    echo "JSON Message: ${JsonOutput.toJson(message)}"
+
+                    httpRequest(
+                        httpMode: 'POST',
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: JsonOutput.toJson(message),
+                        url: "${LARK_WEBHOOK_URL}"
+                    )
+            }
+        }
+    }
+}
