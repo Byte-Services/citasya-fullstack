@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, LoginRequest, LoginResponse, RefreshTokenResponse } from '../interfaces';
 import { useNotificationStore } from './notificationStore';
-import { authService } from '@/services/authService';
+import { authService } from '@/services/auth.service';
 
 interface AuthStore extends AuthState {
   // Actions
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthStore>()(
             const fetchNotifications = ns.fetchNotifications;
             const startAutoRefresh = ns.startAutoRefresh;
             if (typeof fetchNotifications === 'function') {
-              fetchNotifications({ userId: data.user.id }).catch(() => {});
+              fetchNotifications({ userId: String(data.user.id) }).catch(() => {});
             }
             if (typeof startAutoRefresh === 'function') {
               try { startAutoRefresh(30000); } catch { /* ignore */ }
@@ -122,14 +122,14 @@ export const useAuthStore = create<AuthStore>()(
       onRehydrateStorage: () => (persistedState) => {
         try {
           if (persistedState && typeof persistedState === 'object' && 'user' in persistedState) {
-            const p = persistedState as unknown as { user?: { id?: string }; token?: string };
+            const p = persistedState as unknown as { user?: { id?: string | number }; token?: string };
             const user = p.user;
             if (user && user.id) {
               const ns = useNotificationStore.getState();
               const fetchNotifications = ns.fetchNotifications;
               const startAutoRefresh = ns.startAutoRefresh;
               if (typeof fetchNotifications === 'function') {
-                fetchNotifications({ userId: user.id }).catch(() => {});
+                fetchNotifications({ userId: String(user.id) }).catch(() => {});
               }
               if (typeof startAutoRefresh === 'function') {
                 try { startAutoRefresh(30000); } catch { /* ignore */ }

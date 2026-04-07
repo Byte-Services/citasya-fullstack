@@ -1,14 +1,17 @@
 "use client";
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PageLayout from "@/components/layout/PageLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
-import { Modal } from "@/components/ui/Modal";
 import DateForm from "@/components/form/DateForm";
 import Calendar from "@/components/ui/Calendar";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { useAppointmentStore } from "@/store/appointmentStore";
+import { Appointment } from "@/interfaces/appointment";
 
 export default function CalendarPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { appointments: storeAppointments, fetchAppointments } = useAppointmentStore();
     const days = [
         'Lun 12',
         'Mar 13',
@@ -19,144 +22,64 @@ export default function CalendarPage() {
         'Dom 18',
     ];
     const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8 AM to 8 PM
-    const [appointments, setAppointments] = useState([
-        {
-            id: 1,
-            day: 0,
-            startHour: 10,
-            duration: 1.5,
-            client: 'María G.',
-            service: 'Masaje',
-            color: 'bg-emerald-100 border-emerald-300 text-emerald-800',
+
+    const { refetch, isFetching } = useQuery({
+        queryKey: ["calendar-appointments"],
+        queryFn: async () => {
+            await fetchAppointments({ page: 1, limit: 200 });
+            return true;
         },
-        {
-            id: 2,
-            day: 1,
-            startHour: 11.5,
-            duration: 1,
-            client: 'Carlos R.',
-            service: 'Facial',
-            color: 'bg-blue-100 border-blue-300 text-blue-800',
-        },
-        {
-            id: 3,
-            day: 2,
-            startHour: 9,
-            duration: 2,
-            client: 'Elena T.',
-            service: 'Spa Day',
-            color: 'bg-purple-100 border-purple-300 text-purple-800',
-        },
-        {
-            id: 4,
-            day: 3,
-            startHour: 14,
-            duration: 1,
-            client: 'Patricia V.',
-            service: 'Manicure',
-            color: 'bg-rose-100 border-rose-300 text-rose-800',
-        },
-        {
-            id: 5,
-            day: 4,
-            startHour: 16,
-            duration: 1.5,
-            client: 'Roberto D.',
-            service: 'Masaje',
-            color: 'bg-emerald-100 border-emerald-300 text-emerald-800',
-        },
-        {
-            id: 6,
-            day: 0,
-            startHour: 15,
-            duration: 1,
-            client: 'Lucía M.',
-            service: 'Pedicure',
-            color: 'bg-amber-100 border-amber-300 text-amber-800',
-        },
-    ]);
-    // Mock data for dropdowns
-    const mockClients = [
-        'María González',
-        'Carlos Ruiz',
-        'Elena Torres',
-        'Patricia Vega',
-        'Roberto Díaz',
-    ];
-    const mockServices = [
-        'Limpieza Facial',
-        'Masaje Relajante',
-        'Manicure Spa',
-        'Pedicure Spa',
-        'Exfoliación',
-    ];
-    const mockWorkers = ['Ana Silva', 'Laura Gómez', 'Sofía Paz', 'Carlos Mora'];
-    const [formData, setFormData] = useState({
-        client: '',
-        service: '',
-        worker: '',
-        date: '',
-        time: '10:00',
-        notes: '',
     });
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const handleInputChange = (
-        e: React.ChangeEvent<
-            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >,
-    ) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-        if (errors[name])
-            setErrors((prev) => ({
-                ...prev,
-                [name]: '',
-            }));
-    };
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newErrors: Record<string, string> = {};
-        if (!formData.client) newErrors.client = 'Requerido';
-        if (!formData.service) newErrors.service = 'Requerido';
-        if (!formData.worker) newErrors.worker = 'Requerido';
-        if (!formData.date) newErrors.date = 'Requerido';
-        if (!formData.time) newErrors.time = 'Requerido';
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
-        // Simple logic to place the new appointment on the calendar mock visually
-        // In a real app, this would use actual dates. Here we just pick a random day 0-4
-        const startHourNum =
-            parseInt(formData.time.split(':')[0]) +
-            parseInt(formData.time.split(':')[1]) / 60;
-        const newApt = {
-            id: Math.max(...appointments.map((a) => a.id)) + 1,
-            day: Math.floor(Math.random() * 5),
-            startHour: startHourNum,
-            duration: 1,
-            client:
-                formData.client.split(' ')[0] +
-                ' ' +
-                formData.client.split(' ')[1]?.charAt(0) +
-                '.',
-            service: formData.service.split(' ')[0],
-            color: 'bg-blue-100 border-blue-300 text-blue-800', // Default color for new
-        };
-        setAppointments([...appointments, newApt]);
-        setIsModalOpen(false);
-        setFormData({
-            client: '',
-            service: '',
-            worker: '',
-            date: '',
-            time: '10:00',
-            notes: '',
+
+    const calendarAppointments = useMemo(() => {
+        const palette = [
+            'bg-emerald-100 border-emerald-300 text-emerald-800',
+            'bg-blue-100 border-blue-300 text-blue-800',
+            'bg-purple-100 border-purple-300 text-purple-800',
+            'bg-rose-100 border-rose-300 text-rose-800',
+            'bg-amber-100 border-amber-300 text-amber-800',
+        ];
+
+        return (storeAppointments as Appointment[]).map((appointment, index) => {
+            const [hour = 8, minute = 0] = (appointment.hour || '08:00')
+                .split(':')
+                .slice(0, 2)
+                .map((part) => Number(part));
+            const startHour = hour + minute / 60;
+
+            const dateValue = appointment.date
+                ? new Date(`${appointment.date}T00:00:00`)
+                : new Date();
+            const dayIndex = (dateValue.getDay() + 6) % 7;
+
+            const endDate = appointment.end_date ? new Date(appointment.end_date) : null;
+            const durationFromEndDate =
+                endDate && !Number.isNaN(endDate.getTime())
+                    ? (endDate.getHours() + endDate.getMinutes() / 60) - startHour
+                    : null;
+            const duration =
+                durationFromEndDate && durationFromEndDate > 0
+                    ? durationFromEndDate
+                    : Math.max(0.5, (appointment.service?.minutes_duration || 60) / 60);
+
+            const clientFullName = appointment.client?.name || 'Cliente';
+            const nameParts = clientFullName.split(' ').filter(Boolean);
+            const shortClientName =
+                nameParts.length > 1
+                    ? `${nameParts[0]} ${nameParts[1].charAt(0)}.`
+                    : clientFullName;
+
+            return {
+                id: appointment.id,
+                day: Math.max(0, Math.min(dayIndex, days.length - 1)),
+                startHour,
+                duration,
+                client: shortClientName,
+                service: appointment.service?.name?.split(' ')[0] || 'Servicio',
+                color: palette[index % palette.length],
+            };
         });
-    };
+    }, [storeAppointments, days.length]);
 
     const [view, setView] = useState<'semana' | 'dia'>('semana');
     return (
@@ -203,23 +126,17 @@ export default function CalendarPage() {
                 }
             >
                 <div className="h-[calc(100vh-8rem)] flex flex-col min-h-screen mb-8">
-                    <Calendar days={days} hours={hours} appointments={appointments} />
-                    <Modal
+                    <Calendar days={days} hours={hours} appointments={calendarAppointments} />
+                    <DateForm
                         isOpen={isModalOpen}
                         onClose={() => setIsModalOpen(false)}
-                        title="Nueva Cita"
-                        onSubmit={handleSubmit}
-                        submitLabel="Agendar Cita"
-                    >
-                        <DateForm
-                            initialValues={formData}
-                            errors={errors}
-                            onChange={handleInputChange}
-                            mockClients={mockClients}
-                            mockServices={mockServices}
-                            mockWorkers={mockWorkers}
-                        />
-                    </Modal>
+                        onCreated={() => {
+                            void refetch();
+                        }}
+                    />
+                    {isFetching && (
+                        <p className="mt-3 text-sm text-slate-500">Actualizando citas...</p>
+                    )}
                 </div>
             </PageLayout>
         </SidebarLayout>

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import PageLayout from "@/components/layout/PageLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -7,19 +8,50 @@ import { ClientProfileModal } from "@/components/ui/ClientProfileModal";
 import ClientForm from "@/components/form/ClientForm";
 import { Client } from "@/interfaces/client";
 import { Table } from "@/components/ui/Table";
+import { useClientStore } from "@/store/clientStore";
 
+type ClientView = Client & {
+    status: string;
+    lastVisit: string;
+    visits: number;
+};
 
 
 export default function ClientsPage() {
+    const { clients, fetchClients, deleteClient } = useClientStore();
+
     const [searchTerm, setSearchTerm] = useState("");
     // Modals state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     // Selection state
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [selectedClient, setSelectedClient] = useState<ClientView | null>(null);
     const [editingClientId, setEditingClientId] = useState<number | null>(null);
-    const [data, setData] = useState<Client[]>([]);
+
+    const { refetch } = useQuery({
+        queryKey: ["clients-page-data"],
+        queryFn: async () => {
+            await fetchClients({ page: 1, limit: 200 });
+            return true;
+        },
+    });
+
+    const deleteClientMutation = useMutation({
+        mutationFn: async (id: number) => {
+            await deleteClient(id);
+        },
+        onSuccess: async () => {
+            await refetch();
+        },
+    });
+
+    const data: ClientView[] = (clients as Client[]).map((client) => ({
+        ...client,
+        status: "Regular",
+        lastVisit: "-",
+        visits: 0,
+    }));
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -43,13 +75,13 @@ export default function ClientsPage() {
         setIsProfileOpen(false);
         setIsFormModalOpen(true);
     };
-    const openProfile = (client: Client) => {
+    const openProfile = (client: ClientView) => {
         setSelectedClient(client);
         setIsProfileOpen(true);
     };
     const handleDeleteConfirm = () => {
         if (selectedClient) {
-            setData(data.filter((c) => c.id !== selectedClient.id));
+            deleteClientMutation.mutate(selectedClient.id);
             setIsProfileOpen(false);
             setSelectedClient(null);
         }
@@ -90,6 +122,9 @@ export default function ClientsPage() {
                             notes: "",
                         }}
                         centerId={1}
+                        onSuccess={() => {
+                            void refetch();
+                        }}
                     />
 
                     {/* Profile View Modal */}

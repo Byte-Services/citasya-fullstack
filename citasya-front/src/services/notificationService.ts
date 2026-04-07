@@ -38,7 +38,7 @@ export class NotificationService {
     };
   }
 
-  async getNotificationById(id: string): Promise<NotificationResp> {
+  async getNotificationById(id: number): Promise<NotificationResp> {
     const response = await apiService.get<ApiResponse<NotificationResp>>(`/notifications/${id}`);
     return response.response.data;
   }
@@ -48,12 +48,12 @@ export class NotificationService {
     return response.response.data;
   }
 
-  async updateNotification(id: string, notificationData: NotificationRead): Promise<NotificationResp> {
+  async updateNotification(id: number, notificationData: NotificationRead): Promise<NotificationResp> {
     const response = await apiService.patch<ApiResponse<NotificationResp>>(`/notifications/${id}`, notificationData);
     return response.response.data;
   }
 
-  async deleteNotification(id: string): Promise<void> {
+  async deleteNotification(id: number): Promise<void> {
     const response = await apiService.delete<ApiResponse<void>>(`/notifications/${id}`);
     return response.response.data;
   }

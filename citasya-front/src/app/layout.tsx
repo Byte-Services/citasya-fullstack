@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
+import Providers from './providers'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
@@ -20,7 +21,7 @@ export default function RootLayout({
     <html lang="es" className="h-full bg-gray-50" style={{ colorScheme: 'light' }}>
       <body className={`${inter.className} h-full bg-gray-50 text-gray-900`}>
         <Script id="remove-fusion" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: "try{document.documentElement.classList.remove('fusion-extension-loaded');document.body.classList.remove('fusion-extension-loaded');}catch(e){}" }} />
-            {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

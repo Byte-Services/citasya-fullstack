@@ -1,7 +1,5 @@
 // Interfaces de autenticación
 
-import { User } from "./user";
-
 
 export interface LoginRequest {
   email: string;
@@ -34,7 +32,7 @@ export interface LogoutRequest {
 }
 
 export interface AuthState {
-  user: User | null;
+  user: LoginResponse["user"] | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;

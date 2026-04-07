@@ -2,14 +2,17 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/Modal";
 import Input from "@/components/common/Input";
+import { useClientStore } from "@/store/clientStore";
+import { CreateClientRequest, UpdateClientRequest } from "@/interfaces/client";
 
 type ClientFormValues = {
   name: string;
   documentId: string;
   phone: string;
-  email: string;
+  email?: string;
   notes?: string;
   id?: number;
 };
@@ -21,6 +24,7 @@ type ClientFormProps = {
   onClose: () => void;
   title: string;
   submitLabel: string;
+  onSuccess?: (values: ClientFormValues) => void;
 };
 
 const ClientForm: React.FC<ClientFormProps> = ({
@@ -30,7 +34,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
   onClose,
   title,
   submitLabel,
+  onSuccess,
 }) => {
+  const { createClient, updateClient } = useClientStore();
 
 
   const {
@@ -46,12 +52,30 @@ const ClientForm: React.FC<ClientFormProps> = ({
     reset(initialValues);
   }, [initialValues, isOpen, reset]);
 
+  const saveClientMutation = useMutation({
+    mutationFn: async (data: ClientFormValues) => {
+      const payload: CreateClientRequest | UpdateClientRequest = {
+        name: data.name,
+        documentId: data.documentId,
+        phone: data.phone,
+        notes: data.notes || "",
+        center_id: centerId,
+      };
+
+      if (data.id) {
+        await updateClient(data.id, payload as UpdateClientRequest);
+      } else {
+        await createClient(payload as CreateClientRequest);
+      }
+    },
+    onSuccess: (_, variables) => {
+      onSuccess?.(variables);
+      onClose();
+    },
+  });
+
   const onSubmit = (data: ClientFormValues) => {
-    // Añadir center_id al payload
-    const payload = { ...data, center_id: centerId };
-    // Aquí puedes manejar la lógica de guardado local o llamada a API
-    // Por ejemplo, agregar a clients local o mostrar un mensaje
-    onClose();
+    saveClientMutation.mutate(data);
   };
 
   return (
@@ -60,7 +84,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
       onClose={onClose}
       title={title}
       onSubmit={handleSubmit(onSubmit)}
-      submitLabel={submitLabel}
+      submitLabel={saveClientMutation.isPending ? "Guardando..." : submitLabel}
     >
       <div className="space-y-4">
         <div>
@@ -122,6 +146,11 @@ const ClientForm: React.FC<ClientFormProps> = ({
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white resize-none"
           />
         </div>
+        {saveClientMutation.isError && (
+          <p className="text-xs text-rose-600 mt-1">
+            No se pudo guardar el cliente. Inténtalo de nuevo.
+          </p>
+        )}
       </div>
     </Modal>
   );

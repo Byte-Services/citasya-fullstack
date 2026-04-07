@@ -30,14 +30,14 @@ interface NotificationState {
 interface NotificationStore extends NotificationState {
   // Actions
   fetchNotifications: (filters?: NotificationFilters) => Promise<void>;
-  fetchNotificationById: (id: string) => Promise<void>;
+  fetchNotificationById: (id: number) => Promise<void>;
   setCurrentNotification: (notification: NotificationResp | null) => void;
   createNotification: (notificationData: CreateNotification) => Promise<void>;
   updateNotification: (
-    id: string,
+    id: number,
     notificationData: NotificationRead
   ) => Promise<void>;
-  deleteNotification: (id: string) => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
   setFilters: (filters: NotificationFilters) => void;
   clearError: () => void;
   clearSuccessMessage: () => void;
@@ -111,7 +111,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }
   },
 
-  fetchNotificationById: async (id: string) => {
+  fetchNotificationById: async (id: number) => {
     try {
       set({ isLoading: true, error: null });
 
@@ -161,7 +161,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }
   },
 
-  updateNotification: async (id: string, notificationData: NotificationRead) => {
+  updateNotification: async (id: number, notificationData: NotificationRead) => {
     try {
       set({ isLoading: true, error: null, successMessage: null });
 
@@ -194,7 +194,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }
   },
 
-  deleteNotification: async (id: string) => {
+  deleteNotification: async (id: number) => {
     try {
       set({ isLoading: true, error: null });
 

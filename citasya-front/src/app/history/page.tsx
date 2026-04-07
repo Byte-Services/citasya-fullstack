@@ -1,93 +1,70 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { HistoryTable } from "@/components/ui/HistoryTable";
 import PageLayout from "@/components/layout/PageLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
+import { useAppointmentStore } from "@/store/appointmentStore";
+import { Appointment } from "@/interfaces/appointment";
+
+const STATUS_MAP: Record<string, string> = {
+    scheduled: "completada",
+    completed: "completada",
+    cancelled: "cancelada",
+    canceled: "cancelada",
+    no_show: "no_asistio",
+};
 
 export default function HistoryPage() {
+    const { appointments: storeAppointments, fetchAppointments } = useAppointmentStore();
     const [searchTerm, setSearchTerm] = useState("");
-    const history = [
-        {
-            id: "C-1042",
-            date: "12 Oct 2026",
-            time: "10:00 AM",
-            client: "María González",
-            service: "Masaje Relajante",
-            specialist: "Ana Silva",
-            status: "completada",
-            amount: "$45.00",
+
+    useQuery({
+        queryKey: ["history-page-appointments"],
+        queryFn: async () => {
+            await fetchAppointments({ page: 1, limit: 200 });
+            return true;
         },
-        {
-            id: "C-1041",
-            date: "12 Oct 2026",
-            time: "09:00 AM",
-            client: "Carlos Ruiz",
-            service: "Limpieza Facial",
-            specialist: "Laura Gómez",
-            status: "completada",
-            amount: "$60.00",
-        },
-        {
-            id: "C-1040",
-            date: "11 Oct 2026",
-            time: "04:30 PM",
-            client: "Elena Torres",
-            service: "Manicure Spa",
-            specialist: "Sofía Paz",
-            status: "cancelada",
-            amount: "$25.00",
-        },
-        {
-            id: "C-1039",
-            date: "11 Oct 2026",
-            time: "02:00 PM",
-            client: "Patricia Vega",
-            service: "Exfoliación Corporal",
-            specialist: "Ana Silva",
-            status: "completada",
-            amount: "$55.00",
-        },
-        {
-            id: "C-1038",
-            date: "10 Oct 2026",
-            time: "11:00 AM",
-            client: "Roberto Díaz",
-            service: "Masaje Descontracturante",
-            specialist: "Carlos Mora",
-            status: "completada",
-            amount: "$50.00",
-        },
-        {
-            id: "C-1037",
-            date: "10 Oct 2026",
-            time: "09:30 AM",
-            client: "Lucía Méndez",
-            service: "Pedicure Spa",
-            specialist: "Sofía Paz",
-            status: "completada",
-            amount: "$30.00",
-        },
-        {
-            id: "C-1036",
-            date: "09 Oct 2026",
-            time: "03:00 PM",
-            client: "Javier López",
-            service: "Limpieza Facial",
-            specialist: "Laura Gómez",
-            status: "no_asistio",
-            amount: "$60.00",
-        },
-        {
-            id: "C-1035",
-            date: "09 Oct 2026",
-            time: "01:00 PM",
-            client: "Carmen Ortiz",
-            service: "Masaje Piedras",
-            specialist: "Carlos Mora",
-            status: "completada",
-            amount: "$70.00",
-        },
-    ];
+    });
+
+    const history = useMemo(() => {
+        return (storeAppointments as Appointment[]).map((appointment) => {
+            const appointmentDate = appointment.date
+                ? new Date(`${appointment.date}T00:00:00`)
+                : new Date();
+
+            const displayDate = appointmentDate.toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            });
+
+            const [hourPart = 0, minutePart = 0] = (appointment.hour || "00:00")
+                .split(":")
+                .slice(0, 2)
+                .map((part) => Number(part));
+            const timeDate = new Date();
+            timeDate.setHours(hourPart, minutePart, 0, 0);
+            const displayTime = timeDate.toLocaleTimeString("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+
+            const normalizedStatus =
+                STATUS_MAP[appointment.status?.toLowerCase?.() || ""] || "completada";
+
+            return {
+                id: `C-${appointment.id}`,
+                date: displayDate,
+                time: displayTime,
+                client: appointment.client?.name || "Cliente",
+                service: appointment.service?.name || "Servicio",
+                specialist: appointment.worker?.name || "Especialista",
+                status: normalizedStatus,
+                amount: `$${Number(appointment.service?.price || 0).toFixed(2)}`,
+            };
+        });
+    }, [storeAppointments]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
