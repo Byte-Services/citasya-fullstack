@@ -8,7 +8,8 @@ pipeline {
         DOCKER_IMAGE = 'citasya-frontend'
         REGISTRY_CREDENTIALS_ID = 'docker-registry-credentials'
         SSH_CREDENTIALS_ID = 'jenkins-prestaging'
-        'registry.bit.legrev.xyz'
+        
+        SSH_CD_CREDENTIALS_ID = 'jenkins-prestaging'
         SSH_CD_HOST = '137.184.158.15'
         BRANCH = 'develop'
         VERSION = '0.0.1'
