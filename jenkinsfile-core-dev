@@ -20,7 +20,7 @@ pipeline {
         PATH_DOCKERFILE = './docker/Dockerfile.dev'
         PATH_DOCKER_COMPOSE_DEPLOY = 'docker-compose.yml'
         CONTAINER_DNS = 'citasya-core'
-        CONTAINER_NAME = 'CITASYA_CORE'
+        CONTAINER_NAME = 'CITASYA-CORE'
         LARK_WEBHOOK_URL = 'https://open.larksuite.com/open-apis/bot/v2/hook/d9eac110-0742-45fb-819c-88a848fa95f8'
     }
 
