@@ -30,7 +30,7 @@ passport.use(jwtStrategy);
 app.use(passport.initialize());
 
 app.use(cors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
     res.send('¡Backend del agente de WhatsApp funcionando!');
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 
 AppDataSource.initialize()
     .then(() => {
