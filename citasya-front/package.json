@@ -5,11 +5,11 @@
   "scripts": {
     "dev": "next dev --turbopack -p 3000",
     "build:staging": "NODE_ENV=production APP_ENV=staging next build",
-    "build:development": "NODE_ENV=development APP_ENV=dev next build",
+    "build:dev": "NODE_ENV=production APP_ENV=dev next build",
     "build:prod": "NODE_ENV=production APP_ENV=prod next build",
     "build": "next build",
     "start": "next start",
-    "start:dev": "NODE_ENV=development APP_ENV=dev next dev --turbopack -p 3000",
+    "start:dev": "NODE_ENV=production APP_ENV=dev next dev --turbopack -p 3000",
     "start:staging": "NODE_ENV=production APP_ENV=staging next start -p 3000",
     "start:prod": "NODE_ENV=production APP_ENV=prod next start -p 3000",
     "lint": "next lint"
