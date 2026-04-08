@@ -15,7 +15,7 @@ pipeline {
         VERSION = '0.0.1'
         APP_NAME = 'CITASYA-CORE'
         ENVIRONMENT = 'DEVELOP'
-        PATH_BUILD = 'citasya-fullstack/citasya-core'
+        PATH_BUILD = 'citasya-fullstack/citasya-back'
         PATH_DEPLOY = './citasya-infra'
         PATH_DOCKERFILE = './docker/Dockerfile.dev'
         PATH_DOCKER_COMPOSE_DEPLOY = 'docker-compose.yml'
