@@ -11,11 +11,15 @@ import WorkerForm, {
     WorkerFormValues,
 } from "@/components/form/WorkerForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import Toast from "@/components/ui/Toast";
 import { useUserStore } from "@/store/userStore";
+import { useSpecialtyStore } from "@/store/specialtyStore";
 import { User } from "@/interfaces/userEntity";
+import { Specialty } from "@/interfaces/specialty";
 
 export default function WorkersPage() {
     const { users, fetchUsers, deleteUser } = useUserStore();
+    const { specialties, fetchSpecialties } = useSpecialtyStore();
 
     // Modals state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -24,7 +28,15 @@ export default function WorkersPage() {
     // Selection state
     const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
     const [editingWorkerId, setEditingWorkerId] = useState<number | null>(null);
-    const availableSpecialties = ['Faciales', 'Corporales', 'Masajes', 'Uñas'];
+    const [toast, setToast] = useState<{
+        open: boolean;
+        type: "success" | "error";
+        message: string;
+    }>({
+        open: false,
+        type: "success",
+        message: "",
+    });
     const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
     const initialWorkerFormValues: WorkerFormValues = {
@@ -47,6 +59,26 @@ export default function WorkersPage() {
             return true;
         },
     });
+
+    useQuery({
+        queryKey: ["workers-page-specialties"],
+        queryFn: async () => {
+            await fetchSpecialties({ page: 1, limit: 200 });
+            return true;
+        },
+    });
+
+    const availableSpecialties = useMemo(() => {
+        const typedSpecialties = specialties as Specialty[];
+        const uniqueNames = new Set<string>();
+
+        typedSpecialties.forEach((specialty) => {
+            const normalized = specialty.name.trim();
+            if (normalized) uniqueNames.add(normalized);
+        });
+
+        return Array.from(uniqueNames);
+    }, [specialties]);
 
     const workers = useMemo<WorkerProfileData[]>(() => {
         const typedUsers = users as User[];
@@ -139,8 +171,8 @@ export default function WorkersPage() {
             setSelectedWorkerId(null);
         }
     };
-    const handleWorkerFormSuccess = () => {
-        void refetch();
+    const handleWorkerFormSuccess = async () => {
+        await refetch();
     };
 
     return (
@@ -173,6 +205,13 @@ export default function WorkersPage() {
                         availableSpecialties={availableSpecialties}
                         daysOfWeek={daysOfWeek}
                         onSuccess={handleWorkerFormSuccess}
+                        onNotify={(notification) => {
+                            setToast({
+                                open: true,
+                                type: notification.type,
+                                message: notification.message,
+                            });
+                        }}
                     />
 
                     {/* Profile View Modal */}
@@ -191,6 +230,13 @@ export default function WorkersPage() {
                         onConfirm={handleDeleteConfirm}
                         title="¿Eliminar trabajador?"
                         message="Esta acción no se puede deshacer. Se eliminará permanentemente del equipo."
+                    />
+
+                    <Toast
+                        isOpen={toast.open}
+                        type={toast.type}
+                        message={toast.message}
+                        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
                     />
                 </div>
             </PageLayout>

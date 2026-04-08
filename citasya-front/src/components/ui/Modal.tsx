@@ -10,6 +10,8 @@ interface ModalProps {
 	children: React.ReactNode;
 	onSubmit?: (e: React.FormEvent) => void;
 	submitLabel?: string;
+	noValidate?: boolean;
+	isSubmitting?: boolean;
 }
 
 export function Modal({
@@ -19,6 +21,8 @@ export function Modal({
 	children,
 	onSubmit,
 	submitLabel = "Guardar",
+	noValidate = false,
+	isSubmitting = false,
 }: ModalProps) {
 	return (
 		<AnimatePresence>
@@ -55,7 +59,7 @@ export function Modal({
 						{/* Body */}
 						<div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
 							{onSubmit ? (
-								<form id="modal-form" onSubmit={onSubmit} className="space-y-6">
+								<form id="modal-form" onSubmit={onSubmit} noValidate={noValidate} className="space-y-6">
 									{children}
 								</form>
 							) : (
@@ -76,7 +80,8 @@ export function Modal({
 								<button
 									type="submit"
 									form="modal-form"
-									className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm"
+									disabled={isSubmitting}
+									className="bg-primary hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm"
 								>
 									{submitLabel}
 								</button>

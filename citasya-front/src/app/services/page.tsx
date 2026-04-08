@@ -39,10 +39,26 @@ export default function ServicesPage() {
     const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
     const [serviceFormValues, setServiceFormValues] = useState<ServiceFormValues>(initialServiceFormValues);
 
-    const [categories, setCategories] = useState<string[]>([]);
-
     const typedSpecialties = specialties as Specialty[];
     const typedServices = storeServices as Service[];
+
+    const specialtyOptions = useMemo(() => {
+        const registry = new Map<string, Specialty>();
+
+        typedSpecialties.forEach((specialty) => {
+            const normalizedName = specialty.name.trim().toLowerCase();
+            if (!registry.has(normalizedName)) {
+                registry.set(normalizedName, specialty);
+            }
+        });
+
+        return Array.from(registry.values());
+    }, [typedSpecialties]);
+
+    const categories = useMemo(
+        () => specialtyOptions.map((specialty) => specialty.name),
+        [specialtyOptions],
+    );
 
     const { refetch: refetchServices } = useQuery({
         queryKey: ['services-page-services'],
@@ -59,12 +75,6 @@ export default function ServicesPage() {
             return true;
         },
     });
-
-    useEffect(() => {
-        if (typedSpecialties.length > 0) {
-            setCategories(typedSpecialties.map((specialty) => specialty.name));
-        }
-    }, [typedSpecialties]);
 
     const services = useMemo<LocalService[]>(() => {
         return typedServices.map((service) => {
@@ -197,6 +207,7 @@ export default function ServicesPage() {
                     <ServicesForm
                         isOpen={isServiceModalOpen}
                         onClose={() => setIsServiceModalOpen(false)}
+                        specialties={specialtyOptions}
                         categories={categories}
                         initialValues={serviceFormValues}
                         editingServiceId={editingServiceId}
@@ -207,9 +218,7 @@ export default function ServicesPage() {
                     <SpecialtiesForm
                         isOpen={isCategoryModalOpen}
                         onClose={() => setIsCategoryModalOpen(false)}
-                        initialCategories={categories}
                         usedCategories={usedCategories}
-                        onCategoriesChange={setCategories}
                     />
                 </div>
             </PageLayout>

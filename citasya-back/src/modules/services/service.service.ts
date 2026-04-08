@@ -7,6 +7,21 @@ import { Repository } from "typeorm";
  * Clase de servicio para manejar la lógica de negocio de los servicios.
  */
 export class ServicesService {
+        private normalizeStatus(status: string): ServiceStatus | null {
+            if (!status) return null;
+
+            const normalizedStatus = status.toLowerCase();
+            if (normalizedStatus === 'active') {
+                return ServiceStatus.Activo;
+            }
+
+            if (normalizedStatus === 'inactive') {
+                return ServiceStatus.Inactivo;
+            }
+
+            return null;
+        }
+
     private serviceRepository: Repository<Service>;
     private specialtyRepository: Repository<Specialty>;
 
@@ -29,15 +44,20 @@ export class ServicesService {
      * Crea un nuevo servicio.
      * @param serviceData Los datos del servicio a crear.
      */
-    async create(serviceData: { name: string, specialtie_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null> {
-        const specialty = await this.specialtyRepository.findOneBy({ id: serviceData.specialtie_id });
+    async create(serviceData: { name: string, specialty_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null> {
+        const specialtyId = serviceData.specialty_id;
+        if (!specialtyId) {
+            return null;
+        }
+
+        const specialty = await this.specialtyRepository.findOneBy({ id: specialtyId });
         if (!specialty) {
             return null; // Retorna null si la especialidad no existe
         }
 
         // Validación y asignación del estado
-        const serviceStatus = serviceData.status as ServiceStatus;
-        if (!Object.values(ServiceStatus).includes(serviceStatus)) {
+        const serviceStatus = this.normalizeStatus(serviceData.status);
+        if (!serviceStatus) {
             // Maneja el caso de un estado no válido si es necesario
             console.error('Estado de servicio no válido:', serviceData.status);
             return null;
@@ -60,20 +80,25 @@ export class ServicesService {
      * @param id El ID del servicio a actualizar.
      * @param serviceData Los datos actualizados.
      */
-    async update(id: number, serviceData: { name: string, specialtie_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null> {
+    async update(id: number, serviceData: { name: string, specialty_id: number, description: string, minutes_duration: number, price: number, status: string }): Promise<Service | null> {
         const serviceToUpdate = await this.serviceRepository.findOneBy({ id });
         if (!serviceToUpdate) {
             return null;
         }
 
-        const specialty = await this.specialtyRepository.findOneBy({ id: serviceData.specialtie_id });
+        const specialtyId = serviceData.specialty_id;
+        if (!specialtyId) {
+            return null;
+        }
+
+        const specialty = await this.specialtyRepository.findOneBy({ id: specialtyId });
         if (!specialty) {
             return null;
         }
 
         // Validación y asignación del estado
-        const serviceStatus = serviceData.status as ServiceStatus;
-        if (!Object.values(ServiceStatus).includes(serviceStatus)) {
+        const serviceStatus = this.normalizeStatus(serviceData.status);
+        if (!serviceStatus) {
             // Maneja el caso de un estado no válido si es necesario
             console.error('Estado de servicio no válido:', serviceData.status);
             return null;

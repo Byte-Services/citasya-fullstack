@@ -6,6 +6,45 @@ const API_BASE_URL =
   "http://localhost:3000";
 
 class ApiService {
+  private async parseSuccessResponse<T>(response: Response): Promise<T> {
+    if (response.status === 204 || response.status === 205) {
+      return undefined as T;
+    }
+
+    const contentLength = response.headers.get("content-length");
+    if (contentLength === "0") {
+      return undefined as T;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (
+      contentType.includes("application/json") ||
+      contentType.includes("application/problem+json")
+    ) {
+      return await response.json();
+    }
+
+    if (
+      contentType.startsWith("text/") ||
+      contentType.includes("csv") ||
+      contentType.includes("octet-stream")
+    ) {
+      return (await response.text()) as unknown as T;
+    }
+
+    const raw = await response.text();
+    if (!raw) {
+      return undefined as T;
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return raw as unknown as T;
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -63,7 +102,7 @@ class ApiService {
                 err.body = errorBody;
                 throw err;
               }
-              return await retryResponse.json();
+              return await this.parseSuccessResponse<T>(retryResponse);
             }
           }
         } catch {
@@ -100,23 +139,7 @@ class ApiService {
         throw err;
       }
 
-      // Parse response according to Content-Type to support CSV/text downloads
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json") || contentType.includes("application/problem+json")) {
-        return await response.json();
-      }
-
-      // For CSV or other text-based responses, return text
-      if (contentType.startsWith("text/") || contentType.includes("csv") || contentType.includes("octet-stream")) {
-        return (await response.text()) as unknown as T;
-      }
-
-      // Fallback: try JSON, otherwise return text
-      try {
-        return await response.json();
-      } catch {
-        return (await response.text()) as unknown as T;
-      }
+      return await this.parseSuccessResponse<T>(response);
     } catch (error) {
       console.error("API Error:", error);
       throw error;

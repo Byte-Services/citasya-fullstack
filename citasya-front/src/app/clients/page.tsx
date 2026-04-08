@@ -9,6 +9,7 @@ import ClientForm from "@/components/form/ClientForm";
 import { Client } from "@/interfaces/client";
 import { Table } from "@/components/ui/Table";
 import { useClientStore } from "@/store/clientStore";
+import Toast from "@/components/ui/Toast";
 
 type ClientView = Client & {
     status: string;
@@ -28,6 +29,15 @@ export default function ClientsPage() {
     // Selection state
     const [selectedClient, setSelectedClient] = useState<ClientView | null>(null);
     const [editingClientId, setEditingClientId] = useState<number | null>(null);
+    const [toast, setToast] = useState<{
+        open: boolean;
+        type: "success" | "error";
+        message: string;
+    }>({
+        open: false,
+        type: "success",
+        message: "",
+    });
 
     const { refetch } = useQuery({
         queryKey: ["clients-page-data"],
@@ -113,17 +123,27 @@ export default function ClientsPage() {
                             name: selectedClient.name || "",
                             documentId: selectedClient.documentId || "",
                             phone: selectedClient.phone || "",
+                            email: selectedClient.email || "",
                             notes: selectedClient.notes || "",
                             id: selectedClient.id,
                         } : {
                             name: "",
                             documentId: "",
                             phone: "",
+                            email: "",
                             notes: "",
                         }}
                         centerId={1}
-                        onSuccess={() => {
-                            void refetch();
+                        onSuccess={async () => {
+                            await fetchClients({ page: 1, limit: 200 });
+                            await refetch();
+                        }}
+                        onNotify={(notification) => {
+                            setToast({
+                                open: true,
+                                type: notification.type,
+                                message: notification.message,
+                            });
                         }}
                     />
 
@@ -144,6 +164,13 @@ export default function ClientsPage() {
                         onConfirm={handleDeleteConfirm}
                         title="¿Eliminar cliente?"
                         message="Esta acción no se puede deshacer. Se eliminará permanentemente del directorio."
+                    />
+
+                    <Toast
+                        isOpen={toast.open}
+                        type={toast.type}
+                        message={toast.message}
+                        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
                     />
                 </div>
             </PageLayout>

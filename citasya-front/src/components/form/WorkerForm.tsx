@@ -10,7 +10,7 @@ export interface WorkerFormValues {
   email: string;
   phone: string;
   status: string;
-  specialties: string[];
+  // specialties: string[]; // Eliminado para no enviar al backend
   selectedDays: string[];
   startTime: string;
   endTime: string;
@@ -29,14 +29,19 @@ export interface WorkerFormSubmitData {
   endTime: string;
 }
 
+type WorkerFormNotification = {
+  type: 'success' | 'error';
+  message: string;
+};
+
 interface WorkerFormProps {
   isOpen: boolean;
   onClose: () => void;
   editingWorkerId: number | null;
   initialValues: WorkerFormValues;
-  availableSpecialties: string[];
   daysOfWeek: string[];
-  onSuccess: (payload: WorkerFormSubmitData) => void;
+  onSuccess: (payload: WorkerFormSubmitData) => void | Promise<void>;
+  onNotify?: (notification: WorkerFormNotification) => void;
 }
 
 export default function WorkerForm({
@@ -44,9 +49,9 @@ export default function WorkerForm({
   onClose,
   editingWorkerId,
   initialValues,
-  availableSpecialties,
   daysOfWeek,
   onSuccess,
+  onNotify,
 }: WorkerFormProps) {
   const { createUser, updateUser } = useUserStore();
   const [formData, setFormData] = useState<WorkerFormValues>(initialValues);
@@ -144,9 +149,7 @@ export default function WorkerForm({
     if (!formData.role.trim()) nextErrors.role = 'Requerido';
     if (!formData.email.trim()) nextErrors.email = 'Requerido';
     if (!formData.phone.trim()) nextErrors.phone = 'Requerido';
-    if (formData.specialties.length === 0) {
-      nextErrors.specialties = 'Selecciona al menos una especialidad';
-    }
+    // No validar specialties porque el backend no lo requiere
     if (formData.selectedDays.length === 0) {
       nextErrors.selectedDays = 'Selecciona al menos un día';
     }
@@ -160,34 +163,34 @@ export default function WorkerForm({
       formData.selectedDays.includes(day),
     );
     let dayString = sortedDays.join(', ');
-
-    if (
-      sortedDays.length > 2 &&
-      daysOfWeek.indexOf(sortedDays[sortedDays.length - 1]) -
-        daysOfWeek.indexOf(sortedDays[0]) ===
-        sortedDays.length - 1
     ) {
-      dayString = `${sortedDays[0]} - ${sortedDays[sortedDays.length - 1]}`;
+      await saveWorkerMutation.mutateAsync(formData);
+  // Eliminada la función toggleSpecialty y toda la lógica de especialidades
+          phone: formData.phone,
+          status: formData.status,
+          // services: formData.specialties, // Eliminado
+          schedule,
+          selectedDays: formData.selectedDays,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+        }),
+      );
+
+      onNotify?.({
+        type: 'success',
+        message: editingWorkerId
+          ? 'Trabajador actualizado correctamente.'
+          : 'Trabajador creado correctamente.',
+      });
+
+      onClose();
+    } catch {
+      onNotify?.({
+        type: 'error',
+        message: 'No se pudo guardar el trabajador.',
+      });
+      // keep modal open so user can retry or adjust values
     }
-
-    const schedule = `${dayString}, ${formData.startTime} - ${formData.endTime}`;
-
-    await saveWorkerMutation.mutateAsync(formData);
-
-    onSuccess({
-      name: formData.name,
-      role: formData.role,
-      email: formData.email,
-      phone: formData.phone,
-      status: formData.status,
-      services: formData.specialties,
-      schedule,
-      selectedDays: formData.selectedDays,
-      startTime: formData.startTime,
-      endTime: formData.endTime,
-    });
-
-    onClose();
   };
 
   return (
@@ -197,6 +200,7 @@ export default function WorkerForm({
       title={editingWorkerId ? 'Editar Trabajador' : 'Agregar Trabajador'}
       onSubmit={handleSubmit}
       submitLabel={saveWorkerMutation.isPending ? 'Guardando...' : 'Guardar'}
+      isSubmitting={saveWorkerMutation.isPending}
     >
       <div className="space-y-4">
         <div>

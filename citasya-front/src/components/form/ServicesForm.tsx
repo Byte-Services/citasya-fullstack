@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/Modal';
+import Toast from '@/components/ui/Toast';
 import { useServiceStore } from '@/store/serviceStore';
 import { CreateServiceRequest, UpdateServiceRequest } from '@/interfaces/service';
+import { Specialty } from '@/interfaces/specialty';
 
 export interface ServiceFormValues {
   name: string;
@@ -15,10 +17,11 @@ export interface ServiceFormValues {
 interface ServicesFormProps {
   isOpen: boolean;
   onClose: () => void;
+  specialties: Specialty[];
   categories: string[];
   initialValues: ServiceFormValues;
   editingServiceId: number | null;
-  onSuccess: (values: ServiceFormValues) => void;
+  onSuccess: (values: ServiceFormValues) => void | Promise<void>;
 }
 
 const durationToMinutes = (duration: string) => {
@@ -29,6 +32,7 @@ const durationToMinutes = (duration: string) => {
 export default function ServicesForm({
   isOpen,
   onClose,
+  specialties,
   categories,
   initialValues,
   editingServiceId,
@@ -37,6 +41,15 @@ export default function ServicesForm({
   const { createService, updateService } = useServiceStore();
   const [formData, setFormData] = useState<ServiceFormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{
+    open: boolean;
+    type: 'success' | 'error';
+    message: string;
+  }>({
+    open: false,
+    type: 'success',
+    message: '',
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -47,8 +60,13 @@ export default function ServicesForm({
 
   const serviceMutation = useMutation({
     mutationFn: async (values: ServiceFormValues) => {
-      const specialtyIndex = categories.findIndex((cat) => cat === values.category);
-      const specialtyId = specialtyIndex >= 0 ? specialtyIndex + 1 : 1;
+      const selectedSpecialty = specialties.find(
+        (specialty) => specialty.name === values.category,
+      );
+
+      if (!selectedSpecialty) {
+        throw new Error('Especialidad invalida');
+      }
 
       const payload: CreateServiceRequest | UpdateServiceRequest = {
         name: values.name,
@@ -56,7 +74,7 @@ export default function ServicesForm({
         minutes_duration: durationToMinutes(values.duration),
         price: Number(values.price),
         status: 'active',
-        specialty_id: specialtyId,
+        specialty_id: selectedSpecialty.id,
       };
 
       if (editingServiceId) {
@@ -64,10 +82,6 @@ export default function ServicesForm({
       } else {
         await createService(payload as CreateServiceRequest);
       }
-    },
-    onSuccess: (_, values) => {
-      onSuccess(values);
-      onClose();
     },
   });
 
@@ -90,7 +104,7 @@ export default function ServicesForm({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nextErrors: Record<string, string> = {};
@@ -105,18 +119,38 @@ export default function ServicesForm({
       return;
     }
 
-    serviceMutation.mutate(formData);
+    try {
+      await serviceMutation.mutateAsync(formData);
+      setToast({
+        open: true,
+        type: 'success',
+        message: editingServiceId
+          ? 'Servicio actualizado correctamente.'
+          : 'Servicio creado correctamente.',
+      });
+      await Promise.resolve(onSuccess(formData));
+      onClose();
+    } catch {
+      setToast({
+        open: true,
+        type: 'error',
+        message: 'No se pudo guardar el servicio.',
+      });
+      // keep modal open and show existing error message
+    }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editingServiceId ? 'Editar Servicio' : 'Nuevo Servicio'}
-      onSubmit={handleSubmit}
-      submitLabel={serviceMutation.isPending ? 'Guardando...' : 'Guardar'}
-    >
-      <div className="space-y-4">
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={editingServiceId ? 'Editar Servicio' : 'Nuevo Servicio'}
+        onSubmit={handleSubmit}
+        submitLabel={serviceMutation.isPending ? 'Guardando...' : 'Guardar'}
+        isSubmitting={serviceMutation.isPending}
+      >
+        <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Nombre del Servicio <span className="text-rose-500">*</span>
@@ -196,12 +230,15 @@ export default function ServicesForm({
           />
         </div>
 
-        {serviceMutation.isError && (
-          <p className="text-sm text-rose-600">
-            No se pudo guardar el servicio. Inténtalo de nuevo.
-          </p>
-        )}
-      </div>
-    </Modal>
+        </div>
+      </Modal>
+
+      <Toast
+        isOpen={toast.open}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
+    </>
   );
 }
