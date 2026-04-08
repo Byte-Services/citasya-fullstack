@@ -19,7 +19,8 @@ pipeline {
         PATH_DEPLOY = './citasya-infra'
         PATH_DOCKERFILE = './docker/Dockerfile.dev'
         PATH_DOCKER_COMPOSE_DEPLOY = 'docker-compose.yml'
-        CONTAINER_NAME = 'CITASYA_FRONTEND'
+        CONTAINER_DNS = 'citasya-frontend'
+        CONTAINER_NAME = 'CITASYA-FRONTEND'
         LARK_WEBHOOK_URL = 'https://open.larksuite.com/open-apis/bot/v2/hook/d9eac110-0742-45fb-819c-88a848fa95f8'
     }
 
@@ -183,7 +184,7 @@ pipeline {
                     cd ${PATH_DEPLOY} || { echo "Directory ${PATH_DEPLOY} not found"; exit 1; }
                     
                     echo "Pulling images"
-                    docker compose -f ${PATH_DOCKER_COMPOSE_DEPLOY} pull zafra-develop || { echo "Docker compose pull failed"; exit 1; }
+                    docker compose -f ${PATH_DOCKER_COMPOSE_DEPLOY} pull ${CONTAINER_DNS} || { echo "Docker compose pull failed"; exit 1; }
 
                     echo "Stop Backend service"
                     docker stop ${CONTAINER_NAME} || { echo "Docker stop failed"; exit 1; }
