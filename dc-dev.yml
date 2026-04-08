@@ -4,7 +4,7 @@ services:
       context: ./citasya-front
     ports:
       - "3001:3000"
-    env_file: ./citasya-front/.env
+    env_file: ./citasya-front/.envs/.env.develop
     depends_on:
       - backend
     networks:
@@ -20,7 +20,7 @@ services:
     env_file:
       - ./citasya-back/.envs/.env.core
     ports:
-      - "3000:4000"
+      - "3000:3000"
     depends_on:
       - db
     networks:
