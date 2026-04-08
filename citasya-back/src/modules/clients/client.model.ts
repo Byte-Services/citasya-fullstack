@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, Relation } from "typeorm";
 import { Center } from "../centers/center.model.js";
 import { Appointment } from "../appointments/appointment.model.js";
 
@@ -27,8 +27,8 @@ export class Client {
     center_id!: number;
 
     @ManyToOne(() => Center, center => center.clients)
-    center!: Center;
+    center!: Relation<Center>;
 
     @OneToMany(() => Appointment, appointment => appointment.client)
-    appointments!: Appointment[];
+    appointments!: Relation<Appointment[]>;
 }

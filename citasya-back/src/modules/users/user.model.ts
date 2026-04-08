@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from "typeorm";
 import { Center } from "../centers/center.model.js";
 
 export enum UserRole {
@@ -36,5 +36,5 @@ export class User {
     center_id!: number;
 
     @ManyToOne(() => Center, (center: Center) => center.users)
-    center!: Center;
+    center!: Relation<Center>;
 }

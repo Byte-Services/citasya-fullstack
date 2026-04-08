@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Relation } from "typeorm";
 import { Client } from "../clients/client.model.js";
 import { Worker } from "../workers/worker.model.js";
 import { Service } from "../services/service.model.js";
@@ -42,19 +42,19 @@ export class Appointment {
 
     @ManyToOne(() => Service, service => service.appointments)
     @JoinColumn({ name: "service_id" })
-    service!: Service;
+    service!: Relation<Service>;
 
     @Column({ type: "int", nullable: true })
     client_id!: number;
 
     @ManyToOne(() => Client, client => client.appointments)
     @JoinColumn({ name: "client_id" })
-    client!: Client;
+    client!: Relation<Client>;
 
     @Column({ type: "int", nullable: true })
     worker_id!: number;
 
     @ManyToOne(() => Worker, worker => worker.appointments)
     @JoinColumn({ name: "worker_id" })
-    worker!: Worker;
+    worker!: Relation<Worker>;
 }

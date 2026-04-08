@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, OneToMany, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, OneToMany, JoinColumn, Relation } from "typeorm";
 import { Specialty } from "../specialties/specialty.model.js";
 import { Worker } from "../workers/worker.model.js";
 import { Appointment } from "../appointments/appointment.model.js";
@@ -43,11 +43,11 @@ export class Service {
 
     @ManyToOne(() => Specialty, specialty => specialty.services, { eager: true })
     @JoinColumn({ name: "specialty_id" })
-    specialty!: Specialty;
+    specialty!: Relation<Specialty>;
 
     @ManyToMany(() => Worker)
-    workers!: Worker[];
+    workers!: Relation<Worker[]>;
 
     @OneToMany(() => Appointment, appointment => appointment.service)
-    appointments!: Appointment[];
+    appointments!: Relation<Appointment[]>;
 }

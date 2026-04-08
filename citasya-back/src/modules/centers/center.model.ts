@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Relation } from "typeorm";
 import { User } from "../users/user.model.js";
 import { Client } from "../clients/client.model.js";
 import { Specialty } from "../specialties/specialty.model.js";
@@ -32,14 +32,14 @@ export class Center {
     description!: string;
 
     @OneToMany(() => User, user => user.center)
-    users!: User[];
+    users!: Relation<User[]>;
 
     @OneToMany(() => Client, client => client.center)
-    clients!: Client[];
+    clients!: Relation<Client[]>;
 
     @OneToMany(() => Specialty, specialty => specialty.center)
-    specialties!: Specialty[];
+    specialties!: Relation<Specialty[]>;
 
     @OneToMany(() => Worker, worker => worker.center)
-    workers!: Worker[];
+    workers!: Relation<Worker[]>;
 }

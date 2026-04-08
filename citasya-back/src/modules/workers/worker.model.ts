@@ -1,4 +1,4 @@
-import {Entity,PrimaryGeneratedColumn,Column,ManyToOne,OneToMany,JoinTable,ManyToMany} from "typeorm";
+import {Entity,PrimaryGeneratedColumn,Column,ManyToOne,OneToMany,JoinTable,ManyToMany,Relation} from "typeorm";
 import { Center } from "../centers/center.model.js";
 import { Appointment } from "../appointments/appointment.model.js";
 import { Service } from "../services/service.model.js";
@@ -48,10 +48,10 @@ export class Worker {
     center_id!: number;
 
     @ManyToOne(() => Center, (center: Center) => center.workers)
-    center!: Center;
+    center!: Relation<Center>;
 
     @OneToMany(() => Appointment, (appointment: Appointment) => appointment.worker)
-    appointments!: Appointment[];
+    appointments!: Relation<Appointment[]>;
 
     @ManyToMany(() => Service)
     @JoinTable({
@@ -65,5 +65,5 @@ export class Worker {
             referencedColumnName: "id"
         }
     })
-    services!: Service[];
+    services!: Relation<Service[]>;
 }
