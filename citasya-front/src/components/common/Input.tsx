@@ -1,6 +1,6 @@
 import React from 'react'
 
-type InputVariant = 'text' | 'password' | 'time' | 'date'
+type InputVariant = 'text' | 'password' | 'time' | 'date' | 'tel' | 'email' | 'number'
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
 	variant?: InputVariant
@@ -22,6 +22,9 @@ export default function Input({
 	if (variant === 'password') inputType = 'password';
 	else if (variant === 'time') inputType = 'time';
 	else if (variant === 'date') inputType = 'date';
+	else if (variant === 'tel') inputType = 'tel';
+	else if (variant === 'email') inputType = 'email';
+	else if (variant === 'number') inputType = 'number';
 	else inputType = 'text';
 
 	return (

@@ -13,6 +13,7 @@ export interface WorkerGridItem {
   id: number;
   name: string;
   role: string;
+  documentId?: string;
   email: string;
   phone: string;
   status: string;

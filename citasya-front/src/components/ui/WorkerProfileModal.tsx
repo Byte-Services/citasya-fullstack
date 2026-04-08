@@ -2,7 +2,6 @@ import React from 'react';
 import {
   MailIcon,
   PhoneIcon,
-  StarIcon,
   CalendarIcon,
   Edit2Icon,
   Trash2Icon,
@@ -13,6 +12,7 @@ export interface WorkerProfileData {
   id: number;
   name: string;
   role: string;
+  documentId?: string;
   email: string;
   phone: string;
   status: string;
@@ -87,27 +87,6 @@ export default function WorkerProfileModal({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                  Especialidades
-                </h3>
-                <div className="flex items-center">
-                  <StarIcon className="w-4 h-4 text-amber-400 fill-amber-400 mr-1" />
-                  <span className="text-sm font-bold text-slate-800">{worker.rating}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {worker.services.map((service, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-slate-600 shadow-sm"
-                  >
-                    {service}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-100 flex space-x-3">

@@ -6,7 +6,13 @@ import { useMutation } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/Modal";
 import Input from "@/components/common/Input";
 import { useClientStore } from "@/store/clientStore";
-import { CreateClientRequest, UpdateClientRequest } from "@/interfaces/client";
+import { Client, CreateClientRequest, UpdateClientRequest } from "@/interfaces/client";
+import {
+  formatPhoneWithCodeDash,
+  hasAtSymbol,
+  sanitizeNumericValue,
+  validatePhoneDigits,
+} from "@/utils/formValidation";
 
 type ClientFormValues = {
   name: string;
@@ -51,7 +57,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   onSuccess,
   onNotify,
 }) => {
-  const { createClient, updateClient } = useClientStore();
+  const { clients, createClient, updateClient } = useClientStore();
 
 
   const {
@@ -69,7 +75,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
   });
 
   React.useEffect(() => {
-    saveClientMutation.reset();
     clearErrors();
     reset({
       ...EMPTY_CLIENT_FORM,
@@ -123,13 +128,34 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
       onNotify?.({
         type: "error",
-        message: "No se pudo enviar la informacion del cliente.",
+        message,
       });
     },
   });
 
   const onSubmit = (data: ClientFormValues) => {
     if (saveClientMutation.isPending) return;
+
+    const normalizedDocId = sanitizeNumericValue(data.documentId.trim());
+    const typedClients = clients as Client[];
+    const duplicatedClient = typedClients.find((client) => {
+      const clientDoc = sanitizeNumericValue((client.documentId || "").trim());
+      const sameDocument = clientDoc === normalizedDocId;
+      const sameRecord = Boolean(data.id) && client.id === data.id;
+      return sameDocument && !sameRecord;
+    });
+
+    if (duplicatedClient) {
+      setError("documentId", {
+        type: "manual",
+        message: "Ya existe un cliente con ese documento",
+      });
+      onNotify?.({
+        type: "error",
+        message: "Ya existe un cliente con ese documento.",
+      });
+      return;
+    }
 
     clearErrors("root");
     saveClientMutation.reset();
@@ -167,8 +193,12 @@ const ClientForm: React.FC<ClientFormProps> = ({
             {...register("documentId", {
               required: "El documento es obligatorio",
               validate: (value) => value.trim().length > 0 || "El documento es obligatorio",
+              onChange: (e) => {
+                e.target.value = sanitizeNumericValue(e.target.value);
+              },
             })}
             placeholder="Ej. 12345678A"
+            inputMode="numeric"
             className={errors.documentId ? "border-rose-500" : "border-gray-200"}
           />
           {errors.documentId && (
@@ -177,12 +207,20 @@ const ClientForm: React.FC<ClientFormProps> = ({
         </div>
         <div>
           <Input
+            variant="tel"
             label="Teléfono"
             {...register("phone", {
               required: "El telefono es obligatorio",
-              validate: (value) => value.trim().length > 0 || "El telefono es obligatorio",
+              validate: (value) => {
+                if (value.trim().length === 0) return "El telefono es obligatorio";
+                return validatePhoneDigits(value);
+              },
+              onChange: (e) => {
+                e.target.value = formatPhoneWithCodeDash(e.target.value);
+              },
             })}
-            placeholder="+34 600 000 000"
+            inputMode="numeric"
+            placeholder="0412-1234567"
             className={errors.phone ? "border-rose-500" : "border-gray-200"}
           />
           {errors.phone && (
@@ -191,13 +229,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
         </div>
         <div>
           <Input
+            variant="email"
             label="Correo electrónico"
             {...register("email", {
               required: "El correo es obligatorio",
               validate: (value) => {
                 const email = value.trim();
                 if (!email) return "El correo es obligatorio";
-                return /\S+@\S+\.\S+/.test(email) || "Correo invalido";
+                return hasAtSymbol(email) || "Correo invalido";
               },
             })}
             placeholder="ejemplo@email.com"

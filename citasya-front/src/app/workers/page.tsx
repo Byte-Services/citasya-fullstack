@@ -12,14 +12,11 @@ import WorkerForm, {
 } from "@/components/form/WorkerForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import Toast from "@/components/ui/Toast";
-import { useUserStore } from "@/store/userStore";
-import { useSpecialtyStore } from "@/store/specialtyStore";
-import { User } from "@/interfaces/userEntity";
-import { Specialty } from "@/interfaces/specialty";
+import { useWorkerStore } from "@/store/workerStore";
+import { Worker } from "@/interfaces/workers";
 
 export default function WorkersPage() {
-    const { users, fetchUsers, deleteUser } = useUserStore();
-    const { specialties, fetchSpecialties } = useSpecialtyStore();
+    const { workers: workersData, fetchWorkers, deleteWorker } = useWorkerStore();
 
     // Modals state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -41,11 +38,10 @@ export default function WorkersPage() {
 
     const initialWorkerFormValues: WorkerFormValues = {
         name: '',
-        role: '',
+        documentId: '',
         email: '',
         phone: '',
         status: 'Activo',
-        specialties: [],
         selectedDays: [],
         startTime: '09:00',
         endTime: '18:00',
@@ -53,50 +49,48 @@ export default function WorkersPage() {
     const [workerFormValues, setWorkerFormValues] = useState<WorkerFormValues>(initialWorkerFormValues);
 
     const { refetch } = useQuery({
-        queryKey: ["workers-page-users"],
+        queryKey: ["workers-page-workers"],
         queryFn: async () => {
-            await fetchUsers({ page: 1, limit: 200 });
+            await fetchWorkers({ page: 1, limit: 200 });
             return true;
         },
     });
-
-    useQuery({
-        queryKey: ["workers-page-specialties"],
-        queryFn: async () => {
-            await fetchSpecialties({ page: 1, limit: 200 });
-            return true;
-        },
-    });
-
-    const availableSpecialties = useMemo(() => {
-        const typedSpecialties = specialties as Specialty[];
-        const uniqueNames = new Set<string>();
-
-        typedSpecialties.forEach((specialty) => {
-            const normalized = specialty.name.trim();
-            if (normalized) uniqueNames.add(normalized);
-        });
-
-        return Array.from(uniqueNames);
-    }, [specialties]);
 
     const workers = useMemo<WorkerProfileData[]>(() => {
-        const typedUsers = users as User[];
-        return typedUsers.map((user) => ({
-            id: user.id,
-            name: user.name,
-            role: user.role || 'Especialista',
-            email: user.email,
-            phone: 'Sin telefono',
-            status: user.status || 'Activo',
-            rating: 5,
-            services: [],
-            schedule: 'Sin horario',
-            selectedDays: [],
-            startTime: '09:00',
-            endTime: '18:00',
-        }));
-    }, [users]);
+        const typedWorkers = workersData as Worker[];
+        return typedWorkers.map((worker) => {
+            const scheduleObj = (worker.schedule || {}) as {
+                days?: string[];
+                startTime?: string;
+                endTime?: string;
+            };
+
+            const selectedDays = Array.isArray(scheduleObj.days)
+                ? scheduleObj.days
+                : [];
+            const startTime = scheduleObj.startTime || '09:00';
+            const endTime = scheduleObj.endTime || '18:00';
+            const scheduleText = selectedDays.length > 0
+                ? `${selectedDays.join(', ')}, ${startTime} - ${endTime}`
+                : 'Sin horario';
+
+            return {
+                id: worker.id,
+                name: worker.name,
+                role: 'Trabajador',
+                documentId: worker.documentId || '',
+                email: worker.email || 'Sin correo',
+                phone: worker.phone || 'Sin telefono',
+                status: worker.status || 'Activo',
+                rating: 5,
+                services: [],
+                schedule: scheduleText,
+                selectedDays,
+                startTime,
+                endTime,
+            };
+        });
+    }, [workersData]);
 
     const selectedWorker = useMemo(() => {
         if (!selectedWorkerId) return null;
@@ -105,7 +99,7 @@ export default function WorkersPage() {
 
     const deleteWorkerMutation = useMutation({
         mutationFn: async (id: number) => {
-            await deleteUser(id);
+            await deleteWorker(id);
         },
         onSuccess: async () => {
             await refetch();
@@ -143,11 +137,10 @@ export default function WorkersPage() {
         setEditingWorkerId(target.id);
         setWorkerFormValues({
             name: target.name,
-            role: target.role,
+            documentId: target.documentId || '',
             email: target.email,
             phone: target.phone,
             status: target.status,
-            specialties: target.services,
             selectedDays: target.selectedDays || [],
             startTime: target.startTime || '09:00',
             endTime: target.endTime || '18:00',
@@ -202,7 +195,6 @@ export default function WorkersPage() {
                         onClose={() => setIsFormModalOpen(false)}
                         editingWorkerId={editingWorkerId}
                         initialValues={workerFormValues}
-                        availableSpecialties={availableSpecialties}
                         daysOfWeek={daysOfWeek}
                         onSuccess={handleWorkerFormSuccess}
                         onNotify={(notification) => {

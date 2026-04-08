@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/Modal';
-import { useUserStore } from '@/store/userStore';
-import { CreateUserRequest, UpdateUserRequest } from '@/interfaces/userEntity';
+import { useWorkerStore } from '@/store/workerStore';
+import {
+  CreateWorkersRequest,
+  UpdateWorkersRequest,
+} from '@/interfaces/workers';
+import {
+  formatPhoneWithCodeDash,
+  hasAtSymbol,
+  sanitizeNumericValue,
+  validatePhoneDigits,
+} from '@/utils/formValidation';
 
 export interface WorkerFormValues {
   name: string;
-  role: string;
+  documentId: string;
   email: string;
   phone: string;
   status: string;
-  // specialties: string[]; // Eliminado para no enviar al backend
   selectedDays: string[];
   startTime: string;
   endTime: string;
@@ -18,11 +26,10 @@ export interface WorkerFormValues {
 
 export interface WorkerFormSubmitData {
   name: string;
-  role: string;
+  documentId: string;
   email: string;
   phone: string;
   status: string;
-  services: string[];
   schedule: string;
   selectedDays: string[];
   startTime: string;
@@ -53,7 +60,7 @@ export default function WorkerForm({
   onSuccess,
   onNotify,
 }: WorkerFormProps) {
-  const { createUser, updateUser } = useUserStore();
+  const { createWorker, updateWorker } = useWorkerStore();
   const [formData, setFormData] = useState<WorkerFormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -66,17 +73,35 @@ export default function WorkerForm({
 
   const saveWorkerMutation = useMutation({
     mutationFn: async (values: WorkerFormValues) => {
-      const payload: CreateUserRequest | UpdateUserRequest = {
+      const schedule = {
+        days: values.selectedDays,
+        startTime: values.startTime,
+        endTime: values.endTime,
+      };
+
+      const basePayload: UpdateWorkersRequest = {
         name: values.name,
+        documentId: values.documentId || null,
         email: values.email,
-        role: values.role,
+        phone: values.phone,
         status: values.status,
+        center_id: 1,
+        schedule,
       };
 
       if (editingWorkerId) {
-        await updateUser(editingWorkerId, payload as UpdateUserRequest);
+        await updateWorker(editingWorkerId, basePayload);
       } else {
-        await createUser(payload as CreateUserRequest);
+        const createPayload: CreateWorkersRequest = {
+          name: basePayload.name || '',
+          documentId: basePayload.documentId || null,
+          email: basePayload.email || '',
+          phone: basePayload.phone || null,
+          status: basePayload.status || 'Activo',
+          center_id: 1,
+          schedule,
+        };
+        await createWorker(createPayload);
       }
     },
   });
@@ -84,7 +109,16 @@ export default function WorkerForm({
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    if (name === 'documentId') {
+      value = sanitizeNumericValue(value);
+    }
+
+    if (name === 'phone') {
+      value = formatPhoneWithCodeDash(value);
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -99,26 +133,7 @@ export default function WorkerForm({
     }
   };
 
-  const toggleSpecialty = (specialty: string) => {
-    setFormData((prev) => {
-      const isSelected = prev.specialties.includes(specialty);
-      const newSpecialties = isSelected
-        ? prev.specialties.filter((s) => s !== specialty)
-        : [...prev.specialties, specialty];
-
-      if (errors.specialties && newSpecialties.length > 0) {
-        setErrors((currentErrors) => ({
-          ...currentErrors,
-          specialties: '',
-        }));
-      }
-
-      return {
-        ...prev,
-        specialties: newSpecialties,
-      };
-    });
-  };
+  // Eliminada la función toggleSpecialty y toda la lógica de especialidades
 
   const toggleDay = (day: string) => {
     setFormData((prev) => {
@@ -146,9 +161,16 @@ export default function WorkerForm({
 
     const nextErrors: Record<string, string> = {};
     if (!formData.name.trim()) nextErrors.name = 'Requerido';
-    if (!formData.role.trim()) nextErrors.role = 'Requerido';
+    if (!formData.documentId.trim()) nextErrors.documentId = 'Requerido';
     if (!formData.email.trim()) nextErrors.email = 'Requerido';
+    if (formData.email.trim() && !hasAtSymbol(formData.email.trim())) {
+      nextErrors.email = 'Correo invalido';
+    }
     if (!formData.phone.trim()) nextErrors.phone = 'Requerido';
+    if (formData.phone.trim()) {
+      const phoneValidation = validatePhoneDigits(formData.phone);
+      if (phoneValidation !== true) nextErrors.phone = phoneValidation;
+    }
     // No validar specialties porque el backend no lo requiere
     if (formData.selectedDays.length === 0) {
       nextErrors.selectedDays = 'Selecciona al menos un día';
@@ -163,12 +185,28 @@ export default function WorkerForm({
       formData.selectedDays.includes(day),
     );
     let dayString = sortedDays.join(', ');
+
+    if (
+      sortedDays.length > 2 &&
+      daysOfWeek.indexOf(sortedDays[sortedDays.length - 1]) -
+        daysOfWeek.indexOf(sortedDays[0]) ===
+        sortedDays.length - 1
     ) {
+      dayString = `${sortedDays[0]} - ${sortedDays[sortedDays.length - 1]}`;
+    }
+
+    const schedule = `${dayString}, ${formData.startTime} - ${formData.endTime}`;
+
+    try {
       await saveWorkerMutation.mutateAsync(formData);
-  // Eliminada la función toggleSpecialty y toda la lógica de especialidades
+
+      await Promise.resolve(
+        onSuccess({
+          name: formData.name,
+          documentId: formData.documentId,
+          email: formData.email,
           phone: formData.phone,
           status: formData.status,
-          // services: formData.specialties, // Eliminado
           schedule,
           selectedDays: formData.selectedDays,
           startTime: formData.startTime,
@@ -189,7 +227,6 @@ export default function WorkerForm({
         type: 'error',
         message: 'No se pudo guardar el trabajador.',
       });
-      // keep modal open so user can retry or adjust values
     }
   };
 
@@ -216,21 +253,21 @@ export default function WorkerForm({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Rol / Cargo <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="role"
-            value={formData.role}
-            onChange={handleInputChange}
-            placeholder="Ej. Masajista"
-            className={`w-full px-4 py-3 rounded-xl border ${errors.role ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
-          />
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Documento ID <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="documentId"
+              value={formData.documentId}
+              onChange={handleInputChange}
+              inputMode="numeric"
+              className={`w-full px-4 py-3 rounded-xl border ${errors.documentId ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Email <span className="text-rose-500">*</span>
@@ -252,6 +289,8 @@ export default function WorkerForm({
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
+              inputMode="numeric"
+              placeholder="0412-1234567"
               className={`w-full px-4 py-3 rounded-xl border ${errors.phone ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
             />
           </div>
@@ -272,26 +311,7 @@ export default function WorkerForm({
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Especialidades <span className="text-rose-500">*</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {availableSpecialties.map((spec) => (
-              <button
-                key={spec}
-                type="button"
-                onClick={() => toggleSpecialty(spec)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${formData.specialties.includes(spec) ? 'bg-primary text-white' : 'bg-gray-100 text-slate-600 hover:bg-gray-200'}`}
-              >
-                {spec}
-              </button>
-            ))}
-          </div>
-          {errors.specialties && (
-            <p className="mt-1 text-sm text-rose-500">{errors.specialties}</p>
-          )}
-        </div>
+        {/* Se eliminó la sección de especialidades */}
 
         <div className="pt-4 border-t border-gray-100">
           <h3 className="text-sm font-bold text-slate-800 mb-4">

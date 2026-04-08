@@ -5,6 +5,7 @@ import Toast from '@/components/ui/Toast';
 import { useServiceStore } from '@/store/serviceStore';
 import { CreateServiceRequest, UpdateServiceRequest } from '@/interfaces/service';
 import { Specialty } from '@/interfaces/specialty';
+import { sanitizeDecimalValue } from '@/utils/formValidation';
 
 export interface ServiceFormValues {
   name: string;
@@ -90,7 +91,13 @@ export default function ServicesForm({
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    if (name === 'price') {
+      value = sanitizeDecimalValue(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
