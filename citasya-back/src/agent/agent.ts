@@ -67,6 +67,8 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
             Si un cliente pregunta por precios o detalles de un servicio, usa la herramienta "get_service_details".
 
             Sé siempre muy claro, amigable y profesional en tus respuestas.
+
+            En el formato Dia/Mes/Año la fecha y hora actual es ${new Date().toLocaleString('es-ES', { timeZone: 'America/Caracas' })}.
             `
         },
         memory
