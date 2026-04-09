@@ -68,7 +68,7 @@ export async function createSpaAgent(chatHistory?: BaseMessage[]) {
 
             Sé siempre muy claro, amigable y profesional en tus respuestas.
 
-            La fecha y hora actual es ${new Date().toLocaleString('es-ES', { timeZone: 'America/Caracas' })}. El formato es Dia/Mes/Año para fechas.
+            En el formato Dia/Mes/Año la fecha y hora actual es ${new Date().toLocaleString('es-ES', { timeZone: 'America/Caracas' })}.
             `
         },
         memory
