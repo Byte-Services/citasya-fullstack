@@ -8,11 +8,20 @@ import { useAppointmentStore } from "@/store/appointmentStore";
 import { Appointment } from "@/interfaces/appointment";
 
 const STATUS_MAP: Record<string, string> = {
-    scheduled: "completada",
+    scheduled: "programada",
+    pendiente: "programada",
+    confirmado: "programada",
+    en_progreso: "en_progreso",
+    in_progress: "en_progreso",
     completed: "completada",
+    concluida: "completada",
+    completada: "completada",
+    cancelado: "cancelada",
+    cancelada: "cancelada",
     cancelled: "cancelada",
     canceled: "cancelada",
     no_show: "no_asistio",
+    no_asistio: "no_asistio",
 };
 
 export default function HistoryPage() {
@@ -28,7 +37,13 @@ export default function HistoryPage() {
     });
 
     const history = useMemo(() => {
-        return (storeAppointments as Appointment[]).map((appointment) => {
+        return (storeAppointments as Appointment[])
+            .sort((a, b) => {
+                const aValue = `${a.date}T${a.hour || "00:00"}`;
+                const bValue = `${b.date}T${b.hour || "00:00"}`;
+                return new Date(bValue).getTime() - new Date(aValue).getTime();
+            })
+            .map((appointment) => {
             const appointmentDate = appointment.date
                 ? new Date(`${appointment.date}T00:00:00`)
                 : new Date();
@@ -51,7 +66,7 @@ export default function HistoryPage() {
             });
 
             const normalizedStatus =
-                STATUS_MAP[appointment.status?.toLowerCase?.() || ""] || "completada";
+                STATUS_MAP[appointment.status?.toLowerCase?.() || ""] || "programada";
 
             return {
                 id: `C-${appointment.id}`,
@@ -63,7 +78,7 @@ export default function HistoryPage() {
                 status: normalizedStatus,
                 amount: `$${Number(appointment.service?.price || 0).toFixed(2)}`,
             };
-        });
+            });
     }, [storeAppointments]);
 
     const getStatusBadge = (status: string) => {
@@ -78,6 +93,18 @@ export default function HistoryPage() {
                 return (
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
                         Cancelada
+                    </span>
+                );
+            case "programada":
+                return (
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                        Programada
+                    </span>
+                );
+            case "en_progreso":
+                return (
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        En progreso
                     </span>
                 );
             case "no_asistio":

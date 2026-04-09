@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { PlusIcon, UserPlusIcon, CalendarIcon } from "lucide-react";
 
 export function QuickActions() {
@@ -15,7 +16,10 @@ export function QuickActions() {
 					Acciones Rápidas
 				</h2>
 				<div className="space-y-3">
-					<button className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+					<Link
+						href="/calendar?new=1"
+						className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group"
+					>
 						<div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
 							<PlusIcon className="w-5 h-5" />
 						</div>
@@ -25,8 +29,11 @@ export function QuickActions() {
 								Agendar un nuevo servicio
 							</p>
 						</div>
-					</button>
-					<button className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+					</Link>
+					<Link
+						href="/clients?new=1"
+						className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group"
+					>
 						<div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
 							<UserPlusIcon className="w-5 h-5" />
 						</div>
@@ -38,8 +45,11 @@ export function QuickActions() {
 								Registrar en el directorio
 							</p>
 						</div>
-					</button>
-					<button className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+					</Link>
+					<Link
+						href="/calendar"
+						className="w-full flex items-center p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group"
+					>
 						<div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
 							<CalendarIcon className="w-5 h-5" />
 						</div>
@@ -51,7 +61,7 @@ export function QuickActions() {
 								Revisar disponibilidad
 							</p>
 						</div>
-					</button>
+					</Link>
 				</div>
 			</div>
 			<div className="bg-gradient-to-br from-sidebar to-slate-800 p-6 rounded-2xl shadow-soft text-white relative overflow-hidden">

@@ -4,8 +4,9 @@ import { AppointmentsTable } from "@/components/ui/AppointmentsTable";
 import { QuickActions } from "@/components/ui/QuickActions";
 import { Appointment } from "@/interfaces/appointment";
 import { useAppointmentStore } from "@/store/appointmentStore";
+import { getTimelineState, isFinalStatus } from "@/utils/appointmentTimeline";
 import { CalendarIcon, DollarSignIcon, TrendingUpIcon, UsersIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export const ComponentHome = () => {
 
@@ -95,17 +96,73 @@ export const ComponentHome = () => {
       //   },
       // ];
     
-    
-      const nextAppointments = appointments.map((appointment: Appointment) => {
-        return {
-          id: appointment.id,
-          time: appointment.hour,
-          client: appointment.client?.name || '',
-          service: appointment.service?.name || '',
-          specialist: appointment.worker?.name  || '',
-          status: appointment.status,
-        };
-      });
+
+          const nextAppointments = useMemo(() => {
+            const now = new Date();
+
+                const formatDateLabel = (dateValue: string) => {
+                  const date = new Date(`${dateValue}T00:00:00`);
+                  if (Number.isNaN(date.getTime())) return "Fecha inválida";
+
+                  const today = new Date();
+                  const tomorrow = new Date(today);
+                  tomorrow.setDate(today.getDate() + 1);
+
+                  const normalize = (d: Date) => {
+                    const copy = new Date(d);
+                    copy.setHours(0, 0, 0, 0);
+                    return copy.getTime();
+                  };
+
+                  if (normalize(date) === normalize(today)) return "Hoy";
+                  if (normalize(date) === normalize(tomorrow)) return "Mañana";
+
+                  return date.toLocaleDateString("es-ES", {
+                    weekday: "short",
+                    day: "2-digit",
+                    month: "short",
+                  });
+                };
+
+                const formatTimeLabel = (hourValue: string) => {
+                  const [hourPart = "0", minutePart = "0"] = hourValue.split(":").slice(0, 2);
+                  const hour = Number(hourPart);
+                  const minute = Number(minutePart);
+                  const date = new Date();
+                  date.setHours(Number.isFinite(hour) ? hour : 0, Number.isFinite(minute) ? minute : 0, 0, 0);
+
+                  return date.toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                };
+
+            return (appointments as Appointment[])
+              .filter((appointment) => {
+                const timeline = getTimelineState(appointment, now);
+                if (timeline === "past") return false;
+                if (isFinalStatus(appointment.status)) return false;
+                return true;
+              })
+              .sort((a, b) => {
+                const aValue = `${a.date}T${a.hour || "00:00"}`;
+                const bValue = `${b.date}T${b.hour || "00:00"}`;
+                return new Date(aValue).getTime() - new Date(bValue).getTime();
+              })
+              .slice(0, 8)
+              .map((appointment) => {
+                const timeline = getTimelineState(appointment, now);
+                return {
+                  id: appointment.id,
+                  date: formatDateLabel(appointment.date),
+                  time: formatTimeLabel(appointment.hour || "00:00"),
+                  client: appointment.client?.name || '',
+                  service: appointment.service?.name || '',
+                  specialist: appointment.worker?.name || '',
+                  status: timeline === "in_progress" ? "en progreso" : "programada",
+                };
+              });
+          }, [appointments]);
     
     return (
         <div className="max-w-6xl mx-auto min-h-screen">

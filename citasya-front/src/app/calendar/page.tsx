@@ -1,6 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/layout/PageLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import DateForm from "@/components/form/DateForm";
@@ -11,17 +12,60 @@ import { Appointment } from "@/interfaces/appointment";
 
 export default function CalendarPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [view, setView] = useState<'semana' | 'dia'>('semana');
+    const [anchorDate, setAnchorDate] = useState(() => new Date());
+    const searchParams = useSearchParams();
     const { appointments: storeAppointments, fetchAppointments } = useAppointmentStore();
-    const days = [
-        'Lun 12',
-        'Mar 13',
-        'Mié 14',
-        'Jue 15',
-        'Vie 16',
-        'Sáb 17',
-        'Dom 18',
-    ];
+
+    useEffect(() => {
+        if (searchParams.get('new') === '1') {
+            setIsModalOpen(true);
+        }
+    }, [searchParams]);
+
+    const startOfWeek = (date: Date) => {
+        const result = new Date(date);
+        const day = result.getDay();
+        const diffToMonday = (day + 6) % 7;
+        result.setDate(result.getDate() - diffToMonday);
+        result.setHours(0, 0, 0, 0);
+        return result;
+    };
+
+    const formatDayLabel = (date: Date) => {
+        const weekday = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
+            .format(date)
+            .replace('.', '');
+        const normalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+        const dayNumber = new Intl.DateTimeFormat('es-ES', { day: '2-digit' }).format(date);
+        return `${normalizedWeekday} ${dayNumber}`;
+    };
+
+    const visibleDates = useMemo(() => {
+        if (view === 'dia') {
+            const onlyDay = new Date(anchorDate);
+            onlyDay.setHours(0, 0, 0, 0);
+            return [onlyDay];
+        }
+
+        const monday = startOfWeek(anchorDate);
+        return Array.from({ length: 7 }, (_, index) => {
+            const date = new Date(monday);
+            date.setDate(monday.getDate() + index);
+            return date;
+        });
+    }, [anchorDate, view]);
+
+    const days = useMemo(() => visibleDates.map(formatDayLabel), [visibleDates]);
+
     const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8 AM to 8 PM
+
+    const dateToKey = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     const { refetch, isFetching } = useQuery({
         queryKey: ["calendar-appointments"],
@@ -40,27 +84,32 @@ export default function CalendarPage() {
             'bg-amber-100 border-amber-300 text-amber-800',
         ];
 
-        return (storeAppointments as Appointment[]).map((appointment, index) => {
+        const visibleDayMap = new Map<string, number>(
+            visibleDates.map((date, index) => [dateToKey(date), index]),
+        );
+
+        return (storeAppointments as Appointment[])
+            .map((appointment, index) => {
             const [hour = 8, minute = 0] = (appointment.hour || '08:00')
                 .split(':')
                 .slice(0, 2)
                 .map((part) => Number(part));
             const startHour = hour + minute / 60;
 
-            const dateValue = appointment.date
+            const appointmentDate = appointment.date
                 ? new Date(`${appointment.date}T00:00:00`)
-                : new Date();
-            const dayIndex = (dateValue.getDay() + 6) % 7;
+                : null;
 
-            const endDate = appointment.end_date ? new Date(appointment.end_date) : null;
-            const durationFromEndDate =
-                endDate && !Number.isNaN(endDate.getTime())
-                    ? (endDate.getHours() + endDate.getMinutes() / 60) - startHour
-                    : null;
-            const duration =
-                durationFromEndDate && durationFromEndDate > 0
-                    ? durationFromEndDate
-                    : Math.max(0.5, (appointment.service?.minutes_duration || 60) / 60);
+            if (!appointmentDate || Number.isNaN(appointmentDate.getTime())) {
+                return null;
+            }
+
+            const dayIndex = visibleDayMap.get(dateToKey(appointmentDate));
+            if (dayIndex === undefined) {
+                return null;
+            }
+
+            const duration = Math.max(0.5, (appointment.service?.minutes_duration || 60) / 60);
 
             const clientFullName = appointment.client?.name || 'Cliente';
             const nameParts = clientFullName.split(' ').filter(Boolean);
@@ -71,22 +120,69 @@ export default function CalendarPage() {
 
             return {
                 id: appointment.id,
-                day: Math.max(0, Math.min(dayIndex, days.length - 1)),
+                day: dayIndex,
                 startHour,
                 duration,
                 client: shortClientName,
-                service: appointment.service?.name?.split(' ')[0] || 'Servicio',
+                service: appointment.service?.name || 'Servicio',
+                worker: appointment.worker?.name || 'Trabajador',
                 color: palette[index % palette.length],
             };
-        });
-    }, [storeAppointments, days.length]);
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
+    }, [storeAppointments, visibleDates]);
 
-    const [view, setView] = useState<'semana' | 'dia'>('semana');
+    const toolbarSubtitle = useMemo(() => {
+        if (visibleDates.length === 1) {
+            return new Intl.DateTimeFormat('es-ES', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+            }).format(visibleDates[0]);
+        }
+
+        const start = visibleDates[0];
+        const end = visibleDates[visibleDates.length - 1];
+        const startText = new Intl.DateTimeFormat('es-ES', {
+            day: '2-digit',
+            month: 'short',
+        }).format(start);
+        const endText = new Intl.DateTimeFormat('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        }).format(end);
+
+        return `${startText} - ${endText}`;
+    }, [visibleDates]);
+
+    const moveBackward = () => {
+        setAnchorDate((current) => {
+            const next = new Date(current);
+            next.setDate(current.getDate() - (view === 'dia' ? 1 : 7));
+            return next;
+        });
+    };
+
+    const moveForward = () => {
+        setAnchorDate((current) => {
+            const next = new Date(current);
+            next.setDate(current.getDate() + (view === 'dia' ? 1 : 7));
+            return next;
+        });
+    };
+
+    const todayDayIndex = useMemo(() => {
+        const todayKey = dateToKey(new Date());
+        return visibleDates.findIndex((date) => dateToKey(date) === todayKey);
+    }, [visibleDates]);
+
     return (
         <SidebarLayout>
             <PageLayout
                 title="Calendario"
-                subtitle="Octubre 2026"
+                subtitle={toolbarSubtitle}
                 showDate={true}
                 dateToolbar={
                     <div className="flex items-center space-x-4">
@@ -105,13 +201,22 @@ export default function CalendarPage() {
                             </button>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors">
+                            <button
+                                onClick={moveBackward}
+                                className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors"
+                            >
                                 <ChevronLeftIcon className="w-5 h-5" />
                             </button>
-                            <button className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors">
+                            <button
+                                onClick={() => setAnchorDate(new Date())}
+                                className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors"
+                            >
                                 Hoy
                             </button>
-                            <button className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors">
+                            <button
+                                onClick={moveForward}
+                                className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-slate-600 transition-colors"
+                            >
                                 <ChevronRightIcon className="w-5 h-5" />
                             </button>
                         </div>
@@ -126,7 +231,12 @@ export default function CalendarPage() {
                 }
             >
                 <div className="h-[calc(100vh-8rem)] flex flex-col min-h-screen mb-8">
-                    <Calendar days={days} hours={hours} appointments={calendarAppointments} />
+                    <Calendar
+                        days={days}
+                        hours={hours}
+                        appointments={calendarAppointments}
+                        highlightDayIndex={todayDayIndex >= 0 ? todayDayIndex : null}
+                    />
                     <DateForm
                         isOpen={isModalOpen}
                         onClose={() => setIsModalOpen(false)}

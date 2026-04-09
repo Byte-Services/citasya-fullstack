@@ -56,6 +56,8 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ data, getStatusBadge
         <div className="flex gap-2">
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="px-4 py-2 rounded-lg border border-gray-200 text-slate-600 bg-white focus:border-primary outline-none cursor-pointer">
             <option value="">Estado</option>
+            <option value="programada">Programada</option>
+            <option value="en_progreso">En progreso</option>
             <option value="completada">Completada</option>
             <option value="cancelada">Cancelada</option>
             <option value="no_asistio">No Asistió</option>

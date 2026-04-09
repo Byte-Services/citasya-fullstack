@@ -2,16 +2,18 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Controller, useForm } from "react-hook-form";
 import Dropdown from "@/components/common/Dropdown";
 import Input from "@/components/common/Input";
 import { Modal } from "@/components/ui/Modal";
+import Toast from "@/components/ui/Toast";
 import { useAppointmentStore } from "@/store/appointmentStore";
 import { useClientStore } from "@/store/clientStore";
 import { useServiceStore } from "@/store/serviceStore";
-import { useUserStore } from "@/store/userStore";
+import { useWorkerStore } from "@/store/workerStore";
 import { Client } from "@/interfaces/client";
 import { Service } from "@/interfaces/service";
-import { User } from "@/interfaces/userEntity";
+import { Worker } from "@/interfaces/workers";
 
 type DateFormValues = {
   client: string;
@@ -45,18 +47,51 @@ const initialValues: DateFormValues = {
   notes: "",
 };
 
+const normalizeHourValue = (value: string): string => {
+  // HTML time input should already provide HH:mm, but we normalize defensively.
+  const normalized = value.trim();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return normalized;
+
+  const hour = Number(match[1]);
+  const minute = match[2];
+
+  if (Number.isNaN(hour) || hour < 0 || hour > 23) return normalized;
+
+  return `${String(hour).padStart(2, "0")}:${minute}`;
+};
+
 const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
-  const [formData, setFormData] = useState<DateFormValues>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{
+    open: boolean;
+    type: "success" | "error";
+    message: string;
+  }>({
+    open: false,
+    type: "success",
+    message: "",
+  });
 
   const { clients, fetchClients } = useClientStore();
   const { services, fetchServices } = useServiceStore();
-  const { users, fetchUsers } = useUserStore();
+  const { workers, fetchWorkers } = useWorkerStore();
   const { createAppointment } = useAppointmentStore();
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    clearErrors,
+    setError,
+    formState: { errors },
+  } = useForm<DateFormValues>({
+    defaultValues: initialValues,
+  });
 
   const typedClients = clients as Client[];
   const typedServices = services as Service[];
-  const typedUsers = users as User[];
+  const typedWorkers = workers as Worker[];
 
   useQuery({
     queryKey: ["date-form-clients"],
@@ -77,10 +112,10 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
   });
 
   useQuery({
-    queryKey: ["date-form-users"],
+    queryKey: ["date-form-workers"],
     enabled: isOpen,
     queryFn: async () => {
-      await fetchUsers({ page: 1, limit: 100 });
+      await fetchWorkers({ page: 1, limit: 100 });
       return true;
     },
   });
@@ -94,35 +129,16 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
     [typedServices],
   );
   const workerOptions = useMemo(
-    () => typedUsers.map((user) => user.name),
-    [typedUsers],
+    () => typedWorkers.map((worker) => worker.name),
+    [typedWorkers],
   );
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialValues);
-      setErrors({});
+      reset(initialValues);
+      clearErrors();
     }
-  }, [isOpen]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
+  }, [isOpen, reset, clearErrors]);
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (values: DateFormValues) => {
@@ -132,8 +148,8 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
       const selectedService = typedServices.find(
         (service) => service.name === values.service,
       );
-      const selectedWorker = typedUsers.find(
-        (user) => user.name === values.worker,
+      const selectedWorker = typedWorkers.find(
+        (worker) => worker.name === values.worker,
       );
 
       if (!selectedClient || !selectedService || !selectedWorker) {
@@ -141,15 +157,17 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
       }
 
       const durationMinutes = selectedService.minutes_duration || 60;
-      const [hourPart, minutePart] = values.time.split(":").map(Number);
+      const hourValue = normalizeHourValue(values.time);
+      const [hourPart, minutePart] = hourValue.split(":").map(Number);
       const endDateTime = new Date(`${values.date}T00:00:00`);
       endDateTime.setHours(hourPart, minutePart + durationMinutes, 0, 0);
+      const endDate = endDateTime.toISOString().slice(0, 10);
 
       await createAppointment({
         date: values.date,
-        end_date: endDateTime.toISOString(),
-        hour: values.time,
-        status: "scheduled",
+        end_date: endDate,
+        hour: hourValue,
+        status: "Pendiente",
         service_id: selectedService.id,
         client_id: selectedClient.id,
         worker_id: selectedWorker.id,
@@ -164,117 +182,154 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
       } as CreatedAppointmentSummary;
     },
     onSuccess: (createdSummary) => {
+      setToast({
+        open: true,
+        type: "success",
+        message: "Cita agendada correctamente.",
+      });
       onCreated?.(createdSummary);
+      reset(initialValues);
       onClose();
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo agendar la cita. Intentalo de nuevo.";
+
+      setError("root", {
+        type: "server",
+        message,
+      });
+
+      setToast({
+        open: true,
+        type: "error",
+        message,
+      });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.client) newErrors.client = "Requerido";
-    if (!formData.service) newErrors.service = "Requerido";
-    if (!formData.worker) newErrors.worker = "Requerido";
-    if (!formData.date) newErrors.date = "Requerido";
-    if (!formData.time) newErrors.time = "Requerido";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    createAppointmentMutation.mutate(formData);
+  const submitHandler = (data: DateFormValues) => {
+    clearErrors("root");
+    createAppointmentMutation.mutate(data);
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Nueva Cita"
-      onSubmit={handleSubmit}
-      submitLabel={createAppointmentMutation.isPending ? "Agendando..." : "Agendar Cita"}
-    >
-      <div className="space-y-4">
-        <div>
-          <Dropdown
-            name="client"
-            value={formData.client}
-            onChange={handleInputChange}
-            options={clientOptions}
-            placeholder="Seleccionar cliente..."
-            error={!!errors.client}
-            label="Cliente"
-            required
-          />
-        </div>
-        <div>
-          <Dropdown
-            name="service"
-            value={formData.service}
-            onChange={handleInputChange}
-            options={serviceOptions}
-            placeholder="Seleccionar servicio..."
-            error={!!errors.service}
-            label="Servicio"
-            required
-          />
-        </div>
-        <div>
-          <Dropdown
-            name="worker"
-            value={formData.worker}
-            onChange={handleInputChange}
-            options={workerOptions}
-            placeholder="Seleccionar especialista..."
-            error={!!errors.worker}
-            label="Especialista"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Nueva Cita"
+        onSubmit={handleSubmit(submitHandler)}
+        submitLabel={createAppointmentMutation.isPending ? "Agendando..." : "Agendar Cita"}
+        isSubmitting={createAppointmentMutation.isPending}
+      >
+        <div className="space-y-4">
           <div>
-            <Input
-              label="Fecha"
-              variant="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              className={`${errors.date ? "border-rose-500" : "border-gray-200"}`}
+            <Controller
+              name="client"
+              control={control}
+              rules={{ required: "Requerido" }}
+              render={({ field }) => (
+                <Dropdown
+                  name={field.name}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  options={clientOptions}
+                  placeholder="Seleccionar cliente..."
+                  error={!!errors.client}
+                  label="Cliente"
+                  required
+                />
+              )}
             />
           </div>
           <div>
-            <Input
-              label="Hora"
-              variant="time"
-              name="time"
-              value={formData.time}
-              onChange={handleInputChange}
-              className={`${errors.time ? "border-rose-500" : "border-gray-200"}`}
+            <Controller
+              name="service"
+              control={control}
+              rules={{ required: "Requerido" }}
+              render={({ field }) => (
+                <Dropdown
+                  name={field.name}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  options={serviceOptions}
+                  placeholder="Seleccionar servicio..."
+                  error={!!errors.service}
+                  label="Servicio"
+                  required
+                />
+              )}
             />
           </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Notas
-          </label>
-          <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleInputChange}
-            rows={3}
-            placeholder="Instrucciones especiales..."
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white resize-none"
-          />
-        </div>
+          <div>
+            <Controller
+              name="worker"
+              control={control}
+              rules={{ required: "Requerido" }}
+              render={({ field }) => (
+                <Dropdown
+                  name={field.name}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  options={workerOptions}
+                  placeholder="Seleccionar trabajador..."
+                  error={!!errors.worker}
+                  label="Trabajador"
+                  required
+                />
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Input
+                label="Fecha"
+                variant="date"
+                className={`${errors.date ? "border-rose-500" : "border-gray-200"}`}
+                {...register("date", { required: "Requerido" })}
+              />
+            </div>
+            <div>
+              <Input
+                label="Hora"
+                variant="time"
+                className={`${errors.time ? "border-rose-500" : "border-gray-200"}`}
+                {...register("time", { required: "Requerido" })}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Notas
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Instrucciones especiales..."
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white resize-none"
+              {...register("notes")}
+            />
+          </div>
 
-        {createAppointmentMutation.isError && (
-          <p className="text-sm text-rose-600">
-            No se pudo agendar la cita. Inténtalo de nuevo.
-          </p>
-        )}
-      </div>
-    </Modal>
+          {(createAppointmentMutation.isError || errors.root?.message) && (
+            <p className="text-sm text-rose-600">
+              {errors.root?.message || "No se pudo agendar la cita. Intentalo de nuevo."}
+            </p>
+          )}
+
+      
+        </div>
+      </Modal>
+
+      <Toast
+        isOpen={toast.open}
+        type={toast.type}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
+    </>
   );
 };
 

@@ -1,9 +1,11 @@
 "use client";
 import { motion } from "framer-motion";
 import { ArrowRightIcon } from "lucide-react";
+import Link from "next/link";
 
 export interface Appointment {
 	id: number;
+	date: string;
 	time: string;
 	client: string;
 	service: string;
@@ -17,6 +19,17 @@ interface AppointmentsTableProps {
 }
 
 export function AppointmentsTable({ appointments, title = "Próximas Citas" }: AppointmentsTableProps) {
+	const statusBadgeClass = (status: string) => {
+		const normalized = status.toLowerCase();
+		if (normalized === "en progreso") {
+			return "bg-emerald-100 text-emerald-700";
+		}
+		if (normalized === "programada") {
+			return "bg-blue-100 text-blue-700";
+		}
+		return "bg-amber-100 text-amber-700";
+	};
+
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
@@ -28,11 +41,17 @@ export function AppointmentsTable({ appointments, title = "Próximas Citas" }: A
 				<h2 className="text-xl font-bold text-slate-800">
 					{title}
 				</h2>
-				<button className="text-sm text-primary hover:text-primary-hover font-medium flex items-center">
+				<Link
+					href="/history"
+					className="text-sm text-primary hover:text-primary-hover font-medium flex items-center"
+				>
 					Ver todas <ArrowRightIcon className="w-4 h-4 ml-1" />
-				</button>
+				</Link>
 			</div>
 			<div className="divide-y divide-gray-50">
+				{appointments.length === 0 && (
+					<div className="p-6 text-sm text-slate-500">No hay próximas citas en este momento.</div>
+				)}
 				{appointments.map((apt, index) => (
 					<motion.div
 						key={apt.id}
@@ -42,8 +61,11 @@ export function AppointmentsTable({ appointments, title = "Próximas Citas" }: A
 						className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group"
 					>
 						<div className="flex items-center space-x-4">
-							<div className="text-center min-w-[80px]">
-								<p className="text-sm font-bold text-slate-800">
+							<div className="text-left min-w-[118px]">
+								<p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+									{apt.date}
+								</p>
+								<p className="text-sm font-bold text-slate-800 mt-0.5">
 									{apt.time}
 								</p>
 							</div>
@@ -61,7 +83,7 @@ export function AppointmentsTable({ appointments, title = "Próximas Citas" }: A
 						</div>
 						<div>
 							<span
-								className={`px-3 py-1 rounded-full text-xs font-medium ${apt.status === "confirmada" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+								className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass(apt.status)}`}
 							>
 								{apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
 							</span>

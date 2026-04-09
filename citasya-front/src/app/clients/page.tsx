@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/layout/PageLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -20,6 +21,7 @@ type ClientView = Client & {
 
 export default function ClientsPage() {
     const { clients, fetchClients, deleteClient } = useClientStore();
+    const searchParams = useSearchParams();
 
     const [searchTerm, setSearchTerm] = useState("");
     // Modals state
@@ -89,6 +91,14 @@ export default function ClientsPage() {
         setSelectedClient(client);
         setIsProfileOpen(true);
     };
+
+    useEffect(() => {
+        if (searchParams.get("new") === "1") {
+            setEditingClientId(null);
+            setIsFormModalOpen(true);
+        }
+    }, [searchParams]);
+
     const handleDeleteConfirm = () => {
         if (selectedClient) {
             deleteClientMutation.mutate(selectedClient.id);
