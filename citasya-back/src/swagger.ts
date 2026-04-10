@@ -25,6 +25,13 @@ const options: swaggerJsdoc.Options = {
             },
         ],
         components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
             schemas: {
                 Specialty: {
                     type: 'object',
@@ -163,6 +170,7 @@ const options: swaggerJsdoc.Options = {
             { name: 'Clients', description: 'Gestión de clientes' },
             { name: 'Appointments', description: 'Gestión de citas' },
             { name: 'Workers', description: 'Gestión de trabajadores' },
+            { name: 'Reports', description: 'Reportes y métricas del Dashboard' },
         ],
     },
     apis: ['./src/**/*.routes.ts'],
