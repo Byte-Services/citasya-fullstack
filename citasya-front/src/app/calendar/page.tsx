@@ -10,6 +10,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { useAppointmentStore } from "@/store/appointmentStore";
 import { Appointment } from "@/interfaces/appointment";
 
+// this page show the calendar UI, it just only to test
 function CalendarPageContent() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [view, setView] = useState<'semana' | 'dia'>('semana');
@@ -22,7 +23,7 @@ function CalendarPageContent() {
             setIsModalOpen(true);
         }
     }, [searchParams]);
-
+// secondary builder
     const startOfWeek = (date: Date) => {
         const result = new Date(date);
         const day = result.getDay();
