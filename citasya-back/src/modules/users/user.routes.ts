@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { UserController } from './user.controller.js';
+import { authenticateJWT } from '../auth/auth.middleware.js';
 
 const router = Router();
 const userController = new UserController();
+
+router.use(authenticateJWT);
 
 /**
  * @swagger
@@ -66,6 +69,8 @@ const userController = new UserController();
  *     summary: Obtener todos los usuarios
  *     description: Retorna una lista de todos los usuarios del sistema sin sus contraseñas
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de usuarios
@@ -81,6 +86,8 @@ router.get('/', (req, res) => userController.getAllUsers(req, res));
  *     summary: Obtener un usuario por ID
  *     description: Retorna los datos de un usuario específico
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -105,6 +112,8 @@ router.get('/:id', (req, res) => userController.getUserById(req, res));
  *     summary: Crear un nuevo usuario
  *     description: Crea un nuevo usuario (encriptando su contraseña) en el sistema
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -128,6 +137,8 @@ router.post('/', (req, res) => userController.createUser(req, res));
  *     summary: Actualizar un usuario existente
  *     description: Actualiza un usuario. Si se envia la contraseña, esta será encriptada nuevamente.
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -152,6 +163,8 @@ router.put('/:id', (req, res) => userController.updateUser(req, res));
  *     summary: Eliminar un usuario
  *     description: Elimina físicamente un usuario de la base de datos
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
