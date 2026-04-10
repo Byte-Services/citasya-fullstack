@@ -17,6 +17,7 @@ import clientRoutes from './modules/clients/client.routes.js';
 import userRoutes from './modules/users/user.routes.js';
 import workerRoutes from './modules/workers/worker.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import reportRoutes from './modules/reports/report.routes.js';
 import { setupSwagger } from './swagger.js';
 import passport from 'passport';
 import { jwtStrategy } from './modules/auth/jwt.strategy.js';
@@ -61,6 +62,7 @@ AppDataSource.initialize()
         app.use('/admin/clients', clientRoutes);
         app.use('/admin/workers', workerRoutes);
         app.use('/admin/users', userRoutes);
+        app.use('/admin/reports', reportRoutes);
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);

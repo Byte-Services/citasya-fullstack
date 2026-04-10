@@ -255,7 +255,7 @@ function CalendarPageContent() {
 
 export default function CalendarPage() {
     return (
-        <Suspense fallback={null}>
+        <Suspense>
             <CalendarPageContent />
         </Suspense>
     );

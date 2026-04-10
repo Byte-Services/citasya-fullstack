@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/layout/PageLayout";
@@ -19,7 +19,7 @@ type ClientView = Client & {
 };
 
 
-export default function ClientsPage() {
+function ClientsPageContent() {
     const { clients, fetchClients, deleteClient } = useClientStore();
     const searchParams = useSearchParams();
 
@@ -185,5 +185,13 @@ export default function ClientsPage() {
                 </div>
             </PageLayout>
         </SidebarLayout>
+    );
+}
+
+export default function ClientsPage() {
+    return (
+        <Suspense>
+            <ClientsPageContent />
+        </Suspense>
     );
 }
