@@ -165,7 +165,7 @@ export const ComponentHome = () => {
           }, [appointments]);
     
     return (
-        <div className="max-w-6xl mx-auto min-h-screen">
+        <div className="w-full max-w-screen-2xl mx-auto min-h-screen">
 
             {/* Stats Grid */}
             <StatsGrid stats={stats} />

@@ -111,7 +111,7 @@ export default function ClientsPage() {
     return (
         <SidebarLayout>
             <PageLayout title="Directorio de Clientes" subtitle="Gestiona la información de tus clientes." createButtonText="Nuevo cliente" showCreateButton={true} onCreateClick={openNewClientModal}>
-                <div className="max-w-7xl mx-auto mb-8">
+                <div className="w-full max-w-screen-2xl mx-auto mb-8">
                     
 
                 

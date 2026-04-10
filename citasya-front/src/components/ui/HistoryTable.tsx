@@ -1,30 +1,77 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MoreVerticalIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, Loader2Icon } from "lucide-react";
+
+export type HistoryStatus = "programada" | "en_progreso" | "completada" | "cancelada";
 
 export type HistoryItem = {
+  appointmentId: number;
   id: string;
   date: string;
   time: string;
   client: string;
   service: string;
   specialist: string;
-  status: string;
+  status: HistoryStatus;
   amount: string;
 };
 
 interface HistoryTableProps {
   data: HistoryItem[];
-  getStatusBadge: (status: string) => React.ReactNode;
   searchTerm: string;
   setSearchTerm: (v: string) => void;
+  onStatusChange: (appointmentId: number, nextStatus: HistoryStatus) => void | Promise<void>;
+  updatingStatusId?: number | null;
 }
 
-export const HistoryTable: React.FC<HistoryTableProps> = ({ data, getStatusBadge, searchTerm, setSearchTerm }) => {
+const STATUS_STYLE: Record<HistoryStatus, string> = {
+  programada: "bg-blue-100 text-blue-700",
+  en_progreso: "bg-amber-100 text-amber-700",
+  completada: "bg-emerald-100 text-emerald-700",
+  cancelada: "bg-rose-100 text-rose-700",
+};
+
+const STATUS_LABEL: Record<HistoryStatus, string> = {
+  programada: "Programada",
+  en_progreso: "En progreso",
+  completada: "Completada",
+  cancelada: "Cancelada",
+};
+
+const STATUS_OPTIONS: HistoryStatus[] = [
+  "programada",
+  "completada",
+  "cancelada",
+  "en_progreso",
+];
+
+export const HistoryTable: React.FC<HistoryTableProps> = ({
+  data,
+  searchTerm,
+  setSearchTerm,
+  onStatusChange,
+  updatingStatusId,
+}) => {
   const [statusFilter, setStatusFilter] = useState("");
   const [specialistFilter, setSpecialistFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [openStatusMenuId, setOpenStatusMenuId] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const perPage = 8;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (event.target instanceof Node && !menuRef.current.contains(event.target)) {
+        setOpenStatusMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const filtered = data.filter(item => {
     const matchesSearch =
@@ -82,7 +129,6 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ data, getStatusBadge
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Especialista</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Monto</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -107,14 +153,57 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ data, getStatusBadge
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-slate-600">{item.specialist}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(item.status)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div
+                    className="relative inline-block"
+                    ref={openStatusMenuId === item.appointmentId ? menuRef : null}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenStatusMenuId((current) =>
+                          current === item.appointmentId ? null : item.appointmentId,
+                        );
+                      }}
+                      disabled={updatingStatusId === item.appointmentId}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed ${STATUS_STYLE[item.status]}`}
+                      aria-label={`Cambiar estado de ${item.id}`}
+                    >
+                      {updatingStatusId === item.appointmentId ? (
+                        <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ChevronDownIcon className="w-3.5 h-3.5" />
+                      )}
+                      <span>{STATUS_LABEL[item.status]}</span>
+                    </button>
+
+                    {openStatusMenuId === item.appointmentId && (
+                      <div className="absolute left-0 top-10 z-30 min-w-[180px] rounded-xl border border-slate-200 bg-white shadow-lg p-1.5">
+                        {STATUS_OPTIONS.map((statusOption) => {
+                          const isActive = statusOption === item.status;
+                          return (
+                            <button
+                              key={statusOption}
+                              type="button"
+                              onClick={() => {
+                                setOpenStatusMenuId(null);
+                                if (!isActive) {
+                                  void onStatusChange(item.appointmentId, statusOption);
+                                }
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors ${isActive ? "bg-slate-100 text-slate-800" : "text-slate-600 hover:bg-slate-50"}`}
+                            >
+                              <span>{STATUS_LABEL[statusOption]}</span>
+                              {isActive && <CheckIcon className="w-4 h-4 text-primary" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-slate-800">{item.amount}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-slate-400 hover:text-primary transition-colors p-1 rounded-md hover:bg-primary/10">
-                    <MoreVerticalIcon className="w-5 h-5" />
-                  </button>
                 </td>
               </motion.tr>
             ))}

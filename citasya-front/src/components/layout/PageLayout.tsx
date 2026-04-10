@@ -31,7 +31,7 @@ export default function PageLayout({
 
   return (
     <div
-      className="min-h-screen px-4 sm:px-6 lg:px-8 overflow-y-auto pt-10"
+      className="min-h-screen px-4 sm:px-6 lg:px-8 2xl:px-10 overflow-y-auto pt-10"
       style={{ scrollbarGutter: 'stable' }}
     >
       {/* Header */}
