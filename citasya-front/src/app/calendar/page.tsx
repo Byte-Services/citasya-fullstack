@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/layout/PageLayout";
@@ -10,7 +10,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { useAppointmentStore } from "@/store/appointmentStore";
 import { Appointment } from "@/interfaces/appointment";
 
-export default function CalendarPage() {
+function CalendarPageContent() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [view, setView] = useState<'semana' | 'dia'>('semana');
     const [anchorDate, setAnchorDate] = useState(() => new Date());
@@ -250,5 +250,13 @@ export default function CalendarPage() {
                 </div>
             </PageLayout>
         </SidebarLayout>
+    );
+}
+
+export default function CalendarPage() {
+    return (
+        <Suspense>
+            <CalendarPageContent />
+        </Suspense>
     );
 }
