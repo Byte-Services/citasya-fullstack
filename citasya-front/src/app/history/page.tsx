@@ -21,8 +21,6 @@ const STATUS_MAP: Record<string, HistoryStatus> = {
     cancelada: "cancelada",
     cancelled: "cancelada",
     canceled: "cancelada",
-    no_show: "no_asistio",
-    no_asistio: "no_asistio",
 };
 
 const TO_BACKEND_STATUS: Record<HistoryStatus, "Pendiente" | "Confirmado" | "Cancelado" | "Concluida"> = {
@@ -30,7 +28,6 @@ const TO_BACKEND_STATUS: Record<HistoryStatus, "Pendiente" | "Confirmado" | "Can
     en_progreso: "Confirmado",
     completada: "Concluida",
     cancelada: "Cancelado",
-    no_asistio: "Cancelado",
 };
 
 export default function HistoryPage() {
