@@ -4,51 +4,60 @@ import { AppointmentsTable } from "@/components/ui/AppointmentsTable";
 import { QuickActions } from "@/components/ui/QuickActions";
 import { Appointment } from "@/interfaces/appointment";
 import { useAppointmentStore } from "@/store/appointmentStore";
+import { useReportDashboardStore } from "@/store/reportStore";
 import { getTimelineState, isFinalStatus } from "@/utils/appointmentTimeline";
 import { CalendarIcon, DollarSignIcon, TrendingUpIcon, UsersIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 export const ComponentHome = () => {
-
-
-
       const { appointments, fetchAppointments } = useAppointmentStore();
-    
-    
+      const { metrics, fetchDashboardMetrics } = useReportDashboardStore();
+
       useEffect(() => {
         fetchAppointments();
-      }, [fetchAppointments]);
-    
-    
-      // Mock stats
+        fetchDashboardMetrics();
+      }, [fetchAppointments, fetchDashboardMetrics]);
+
+      const formatDelta = (value: number, suffix: string) => {
+        const sign = value > 0 ? "+" : "";
+        return `${sign}${value} ${suffix}`;
+      };
+
+      const formatCurrency = (value: number) =>
+        new Intl.NumberFormat("es-ES", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0,
+        }).format(value);
+
       const stats = [
         {
           label: "Citas Hoy",
-          value: "8",
+          value: String(metrics?.citasHoy?.value ?? 0),
           icon: CalendarIcon,
-          trend: "+2 vs ayer",
-          trendUp: true,
+          trend: formatDelta(metrics?.citasHoy?.vsAyer ?? 0, "vs ayer"),
+          trendUp: (metrics?.citasHoy?.vsAyer ?? 0) >= 0,
         },
         {
           label: "Clientes Nuevos",
-          value: "3",
+          value: String(metrics?.clientesNuevos?.value ?? 0),
           icon: UsersIcon,
-          trend: "+1 vs ayer",
-          trendUp: true,
+          trend: formatDelta(metrics?.clientesNuevos?.vsAyer ?? 0, "vs ayer"),
+          trendUp: (metrics?.clientesNuevos?.vsAyer ?? 0) >= 0,
         },
         {
           label: "Ingresos del Día",
-          value: "$450",
+          value: formatCurrency(metrics?.ingresosDia?.value ?? 0),
           icon: DollarSignIcon,
-          trend: "+15% vs ayer",
-          trendUp: true,
+          trend: formatDelta(metrics?.ingresosDia?.vsAyer ?? 0, "% vs ayer"),
+          trendUp: (metrics?.ingresosDia?.vsAyer ?? 0) >= 0,
         },
         {
           label: "Tasa de Asistencia",
-          value: "92%",
+          value: `${metrics?.tasaAsistencia?.value ?? 0}%`,
           icon: TrendingUpIcon,
-          trend: "-2% vs mes pasado",
-          trendUp: false,
+          trend: formatDelta(metrics?.tasaAsistencia?.vsMesPasado ?? 0, "% vs mes pasado"),
+          trendUp: (metrics?.tasaAsistencia?.vsMesPasado ?? 0) >= 0,
         },
       ];
     

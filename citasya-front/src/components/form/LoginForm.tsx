@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
+import { useAuthStore } from '@/store';
 
 interface LoginFormProps {
 	onLogin?: (email: string, password: string) => void;
@@ -11,17 +12,23 @@ interface LoginFormProps {
 export default function LoginForm({ onLogin }: LoginFormProps) {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const { login, isLoading } = useAuthStore();
 	const router = useRouter();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setIsLoading(true);
-		if (onLogin) {
-			await onLogin(email, password);
+		setError(null);
+		try {
+			if (onLogin) {
+				await onLogin(email, password);
+			} else {
+				await login({ email, password });
+			}
+			router.replace('/');
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion');
 		}
-		router.push('/');
-		setIsLoading(false);
 	};
 
 	return (
@@ -63,6 +70,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 			>
 				Iniciar Sesion
 			</Button>
+
+			{error ? <p className="text-sm text-red-600">{error}</p> : null}
 		</form>
 	);
 }

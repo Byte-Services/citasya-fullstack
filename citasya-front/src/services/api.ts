@@ -6,6 +6,16 @@ const API_BASE_URL =
   "http://localhost:3000";
 
 class ApiService {
+  private async handleUnauthorized(message: string): Promise<never> {
+    await useAuthStore.getState().logout();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+    const err: Error & { status?: number } = new Error(message);
+    err.status = 401;
+    throw err;
+  }
+
   private async parseSuccessResponse<T>(response: Response): Promise<T> {
     if (response.status === 204 || response.status === 205) {
       return undefined as T;
@@ -70,59 +80,11 @@ class ApiService {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
       if (response.status === 401) {
-        // Token expirado, intentar refresh
-        try {
-          
-          const refreshAuthToken = useAuthStore.getState().refreshAuthToken;
-          if (refreshAuthToken) {
-            await refreshAuthToken();
-            // Reintentar la petición con el nuevo token
-            const newToken = useAuthStore.getState().token;
-            if (newToken) {
-              config.headers = {
-                ...config.headers,
-                Authorization: `Bearer ${newToken}`,
-              };
-              const retryResponse = await fetch(
-                `${API_BASE_URL}${endpoint}`,
-                config
-              );
-              if (!retryResponse.ok) {
-                let errorBody: unknown = undefined;
-                try {
-                  const text = await retryResponse.text();
-                  errorBody = text ? JSON.parse(text) : undefined;
-                } catch {
-                  // ignore JSON parse errors
-                }
-                const err: Error & { status?: number; body?: unknown } = new Error(
-                  (errorBody as { message?: string })?.message || `HTTP error! status: ${retryResponse.status}`
-                );
-                err.status = retryResponse.status;
-                err.body = errorBody;
-                throw err;
-              }
-              return await this.parseSuccessResponse<T>(retryResponse);
-            }
-          }
-        } catch {
-          // Si el refresh falla, hacer logout
-          await useAuthStore.getState().logout();
-          throw new Error("Sesión expirada");
-        }
+        return this.handleUnauthorized("Sesion expirada");
       }
       // Manejo de 403 Forbidden: token inválido o sin permisos
       if (response.status === 403) {
-        // Limpiar token y redirigir al login
-        const logout = useAuthStore.getState().logout;
-        if (logout) logout();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        // También lanzar error para que la app lo sepa
-        const err: Error & { status?: number } = new Error('Forbidden resource, redirecting to login');
-        err.status = 403;
-        throw err;
+        return this.handleUnauthorized("Acceso no autorizado");
       }
 
       if (!response.ok) {

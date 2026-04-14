@@ -1,15 +1,16 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AuthState, LoginRequest, LoginResponse, RefreshTokenResponse } from '../interfaces';
+import { AuthState, LoginRequest, LoginResponse } from '../interfaces';
 import { authService } from '@/services/auth.service';
 
 interface AuthStore extends AuthState {
   // Actions
   login: (credentials: LoginRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAuthToken: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   clearAuth: () => void;
+  setHasHydrated: (value: boolean) => void;
 }
 
 const initialState: AuthState = {
@@ -17,6 +18,7 @@ const initialState: AuthState = {
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  hasHydrated: false,
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -58,22 +60,8 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshAuthToken: async () => {
-        try {
-          const { token } = get();
-          
-          if (!token) {
-            throw new Error('No hay token');
-          }
-
-          const data: RefreshTokenResponse = await authService.refreshToken(token);
-
-          set({
-            token: data.token,
-          });
-        } catch (error) {
-          set(initialState);
-          throw error;
-        }
+        set(initialState);
+        throw new Error('Sesion expirada');
       },
 
       setLoading: (loading: boolean) => {
@@ -82,6 +70,10 @@ export const useAuthStore = create<AuthStore>()(
 
       clearAuth: () => {
         set(initialState);
+      },
+
+      setHasHydrated: (value: boolean) => {
+        set({ hasHydrated: value });
       },
     }),
     {
@@ -92,6 +84,9 @@ export const useAuthStore = create<AuthStore>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 ); 

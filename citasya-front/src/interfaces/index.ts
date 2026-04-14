@@ -9,3 +9,6 @@ export * from './auth';
 // Interfaces de usuario
 export * from './user';
 
+// Interfaces de reportes
+export * from './report';
+

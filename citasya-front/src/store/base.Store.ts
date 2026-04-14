@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import { BaseEntity } from "@/interfaces/common";
-import { PaginatedResponse } from "@/interfaces";
 import { BaseFilters, BaseService } from "@/services/baseService";
 
 export interface BaseStoreState<T extends BaseEntity, TFilters extends BaseFilters> {
