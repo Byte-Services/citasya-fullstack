@@ -26,7 +26,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     }
 
     if (isAuthenticated && pathname === '/login') {
-      router.replace('/');
+      router.replace('/home');
     }
   }, [hasHydrated, isAuthenticated, pathname, router]);
 

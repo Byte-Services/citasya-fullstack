@@ -7,6 +7,7 @@ interface DropdownProps {
 	options: string[];
 	placeholder?: string;
 	error?: boolean;
+	errorMessage?: string;
 	className?: string;
 	label?: string;
 	required?: boolean;
@@ -19,6 +20,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 	options,
 	placeholder = "Seleccionar...",
 	error = false,
+	errorMessage,
 	className = "",
 	label,
 	required = false,
@@ -34,6 +36,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 					name={name}
 					value={value}
 					onChange={onChange}
+					aria-invalid={error}
 					className={`w-full px-4 py-3 pr-10 rounded-xl border appearance-none ${error ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white ${className}`}
 				>
 					<option value="">{placeholder}</option>
@@ -54,6 +57,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 				>
 					<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
 				</svg>
+				{errorMessage ? <p className="mt-1 text-sm text-rose-600">{errorMessage}</p> : null}
 			</div>
 		);
 };

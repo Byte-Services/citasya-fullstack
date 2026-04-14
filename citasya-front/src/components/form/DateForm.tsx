@@ -223,6 +223,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
         title="Nueva Cita"
         onSubmit={handleSubmit(submitHandler)}
         submitLabel={createAppointmentMutation.isPending ? "Agendando..." : "Agendar Cita"}
+        noValidate
         isSubmitting={createAppointmentMutation.isPending}
       >
         <div className="space-y-4">
@@ -230,7 +231,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
             <Controller
               name="client"
               control={control}
-              rules={{ required: "Requerido" }}
+              rules={{ required: "El cliente es requerido" }}
               render={({ field }) => (
                 <Dropdown
                   name={field.name}
@@ -239,6 +240,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
                   options={clientOptions}
                   placeholder="Seleccionar cliente..."
                   error={!!errors.client}
+                  errorMessage={errors.client?.message}
                   label="Cliente"
                   required
                 />
@@ -249,7 +251,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
             <Controller
               name="service"
               control={control}
-              rules={{ required: "Requerido" }}
+              rules={{ required: "El servicio es requerido" }}
               render={({ field }) => (
                 <Dropdown
                   name={field.name}
@@ -258,6 +260,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
                   options={serviceOptions}
                   placeholder="Seleccionar servicio..."
                   error={!!errors.service}
+                  errorMessage={errors.service?.message}
                   label="Servicio"
                   required
                 />
@@ -268,7 +271,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
             <Controller
               name="worker"
               control={control}
-              rules={{ required: "Requerido" }}
+              rules={{ required: "El trabajador es requerido" }}
               render={({ field }) => (
                 <Dropdown
                   name={field.name}
@@ -277,6 +280,7 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
                   options={workerOptions}
                   placeholder="Seleccionar trabajador..."
                   error={!!errors.worker}
+                  errorMessage={errors.worker?.message}
                   label="Trabajador"
                   required
                 />
@@ -288,16 +292,16 @@ const DateForm: React.FC<DateFormProps> = ({ isOpen, onClose, onCreated }) => {
               <Input
                 label="Fecha"
                 variant="date"
-                className={`${errors.date ? "border-rose-500" : "border-gray-200"}`}
-                {...register("date", { required: "Requerido" })}
+                error={errors.date?.message}
+                {...register("date", { required: "La fecha es requerida" })}
               />
             </div>
             <div>
               <Input
                 label="Hora"
                 variant="time"
-                className={`${errors.time ? "border-rose-500" : "border-gray-200"}`}
-                {...register("time", { required: "Requerido" })}
+                error={errors.time?.message}
+                {...register("time", { required: "La hora es requerida" })}
               />
             </div>
           </div>

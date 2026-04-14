@@ -44,13 +44,13 @@ export default function WorkersGrid({
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+      className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3"
     >
       {workers.map((worker) => (
         <motion.div
           key={worker.id}
           variants={itemVariants}
-          className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden flex flex-col group"
+          className="w-full min-w-0 bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden flex flex-col group"
         >
           <div className="p-6 flex-1">
             <div className="flex justify-between items-start mb-6">

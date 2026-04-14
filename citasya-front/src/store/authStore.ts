@@ -21,6 +21,11 @@ const initialState: AuthState = {
   hasHydrated: false,
 };
 
+const clearedAuthState: AuthState = {
+  ...initialState,
+  hasHydrated: true,
+};
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
@@ -55,12 +60,12 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           console.error('Error en logout:', error);
         } finally {
-          set(initialState);
+          set(clearedAuthState);
         }
       },
 
       refreshAuthToken: async () => {
-        set(initialState);
+        set(clearedAuthState);
         throw new Error('Sesion expirada');
       },
 
@@ -69,7 +74,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearAuth: () => {
-        set(initialState);
+        set(clearedAuthState);
       },
 
       setHasHydrated: (value: boolean) => {

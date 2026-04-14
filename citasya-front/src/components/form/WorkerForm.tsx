@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import Input from '@/components/common/Input';
+import Dropdown from '@/components/common/Dropdown';
 import { Modal } from '@/components/ui/Modal';
 import { useWorkerStore } from '@/store/workerStore';
 import {
@@ -61,15 +64,28 @@ export default function WorkerForm({
   onNotify,
 }: WorkerFormProps) {
   const { createWorker, updateWorker } = useWorkerStore();
-  const [formData, setFormData] = useState<WorkerFormValues>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    clearErrors,
+    setError,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<WorkerFormValues>({
+    defaultValues: initialValues,
+  });
+
+  const selectedDays = watch('selectedDays');
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialValues);
-      setErrors({});
+      reset(initialValues);
+      clearErrors();
     }
-  }, [initialValues, isOpen]);
+  }, [initialValues, isOpen, reset, clearErrors]);
 
   const saveWorkerMutation = useMutation({
     mutationFn: async (values: WorkerFormValues) => {
@@ -106,84 +122,49 @@ export default function WorkerForm({
     },
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name } = e.target;
-    let { value } = e.target;
-
-    if (name === 'documentId') {
-      value = sanitizeNumericValue(value);
-    }
-
-    if (name === 'phone') {
-      value = formatPhoneWithCodeDash(value);
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  // Eliminada la función toggleSpecialty y toda la lógica de especialidades
-
   const toggleDay = (day: string) => {
-    setFormData((prev) => {
-      const isSelected = prev.selectedDays.includes(day);
-      const newDays = isSelected
-        ? prev.selectedDays.filter((d) => d !== day)
-        : [...prev.selectedDays, day];
+    const isSelected = selectedDays.includes(day);
+    const nextDays = isSelected
+      ? selectedDays.filter((selectedDay) => selectedDay !== day)
+      : [...selectedDays, day];
 
-      if (errors.selectedDays && newDays.length > 0) {
-        setErrors((currentErrors) => ({
-          ...currentErrors,
-          selectedDays: '',
-        }));
-      }
-
-      return {
-        ...prev,
-        selectedDays: newDays,
-      };
-    });
+    setValue('selectedDays', nextDays, { shouldValidate: true });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = async (values: WorkerFormValues) => {
+    clearErrors('root');
 
-    const nextErrors: Record<string, string> = {};
-    if (!formData.name.trim()) nextErrors.name = 'Requerido';
-    if (!formData.documentId.trim()) nextErrors.documentId = 'Requerido';
-    if (!formData.email.trim()) nextErrors.email = 'Requerido';
-    if (formData.email.trim() && !hasAtSymbol(formData.email.trim())) {
-      nextErrors.email = 'Correo invalido';
-    }
-    if (!formData.phone.trim()) nextErrors.phone = 'Requerido';
-    if (formData.phone.trim()) {
-      const phoneValidation = validatePhoneDigits(formData.phone);
-      if (phoneValidation !== true) nextErrors.phone = phoneValidation;
-    }
-    // No validar specialties porque el backend no lo requiere
-    if (formData.selectedDays.length === 0) {
-      nextErrors.selectedDays = 'Selecciona al menos un día';
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
+    if (!values.selectedDays.length) {
+      setError('selectedDays', {
+        type: 'manual',
+        message: 'Selecciona al menos un día',
+      });
       return;
     }
 
-    const sortedDays = daysOfWeek.filter((day) =>
-      formData.selectedDays.includes(day),
-    );
+    const email = values.email.trim();
+    if (email && !hasAtSymbol(email)) {
+      setError('email', {
+        type: 'manual',
+        message: 'Correo invalido',
+      });
+      return;
+    }
+
+    if (values.phone.trim()) {
+      const phoneValidation = validatePhoneDigits(values.phone);
+      if (phoneValidation !== true) {
+        setError('phone', {
+          type: 'manual',
+          message: phoneValidation,
+        });
+        return;
+      }
+    }
+
+    const normalizedDocumentId = sanitizeNumericValue(values.documentId);
+    const normalizedPhone = formatPhoneWithCodeDash(values.phone);
+    const sortedDays = daysOfWeek.filter((day) => values.selectedDays.includes(day));
     let dayString = sortedDays.join(', ');
 
     if (
@@ -195,22 +176,22 @@ export default function WorkerForm({
       dayString = `${sortedDays[0]} - ${sortedDays[sortedDays.length - 1]}`;
     }
 
-    const schedule = `${dayString}, ${formData.startTime} - ${formData.endTime}`;
+    const schedule = `${dayString}, ${values.startTime} - ${values.endTime}`;
 
     try {
-      await saveWorkerMutation.mutateAsync(formData);
+      await saveWorkerMutation.mutateAsync(values);
 
       await Promise.resolve(
         onSuccess({
-          name: formData.name,
-          documentId: formData.documentId,
-          email: formData.email,
-          phone: formData.phone,
-          status: formData.status,
+          name: values.name,
+          documentId: normalizedDocumentId,
+          email: values.email,
+          phone: normalizedPhone,
+          status: values.status,
           schedule,
-          selectedDays: formData.selectedDays,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
+          selectedDays: values.selectedDays,
+          startTime: values.startTime,
+          endTime: values.endTime,
         }),
       );
 
@@ -235,83 +216,75 @@ export default function WorkerForm({
       isOpen={isOpen}
       onClose={onClose}
       title={editingWorkerId ? 'Editar Trabajador' : 'Agregar Trabajador'}
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(handleFormSubmit)}
       submitLabel={saveWorkerMutation.isPending ? 'Guardando...' : 'Guardar'}
+      noValidate
       isSubmitting={saveWorkerMutation.isPending}
     >
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Nombre Completo <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
+        <Input
+          label="Nombre Completo"
+          error={errors.name?.message}
+          {...register('name', {
+            required: 'El nombre es requerido',
+            validate: (value) => value.trim().length > 0 || 'El nombre es requerido',
+          })}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Documento ID"
+            inputMode="numeric"
+            error={errors.documentId?.message}
+            {...register('documentId', {
+              required: 'El documento es requerido',
+              validate: (value) => value.trim().length > 0 || 'El documento es requerido',
+              onChange: (e) => {
+                e.target.value = sanitizeNumericValue(e.target.value);
+              },
+            })}
+          />
+
+          <Input
+            label="Email"
+            variant="email"
+            error={errors.email?.message}
+            {...register('email', {
+              required: 'El correo es requerido',
+              validate: (value) => {
+                const trimmed = value.trim();
+                if (!trimmed) return 'El correo es requerido';
+                return hasAtSymbol(trimmed) || 'Correo invalido';
+              },
+            })}
+          />
+
+          <Input
+            label="Teléfono"
+            variant="tel"
+            inputMode="numeric"
+            placeholder="0412-1234567"
+            error={errors.phone?.message}
+            {...register('phone', {
+              required: 'El telefono es requerido',
+              validate: (value) => {
+                if (value.trim().length === 0) return 'El telefono es requerido';
+                return validatePhoneDigits(value);
+              },
+              onChange: (e) => {
+                e.target.value = formatPhoneWithCodeDash(e.target.value);
+              },
+            })}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Documento ID <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="documentId"
-              value={formData.documentId}
-              onChange={handleInputChange}
-              inputMode="numeric"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.documentId ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Email <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-3 rounded-xl border ${errors.email ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Teléfono <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              inputMode="numeric"
-              placeholder="0412-1234567"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.phone ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Estado
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
-          >
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-
-        {/* Se eliminó la sección de especialidades */}
+        <Dropdown
+          name="status"
+          value={watch('status')}
+          onChange={(e) => setValue('status', e.target.value, { shouldValidate: true })}
+          options={['Activo', 'Inactivo']}
+          label="Estado"
+        />
 
         <div className="pt-4 border-t border-gray-100">
           <h3 className="text-sm font-bold text-slate-800 mb-4">
@@ -328,50 +301,28 @@ export default function WorkerForm({
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${formData.selectedDays.includes(day) ? 'bg-primary text-white' : 'bg-gray-100 text-slate-600 hover:bg-gray-200'}`}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${selectedDays.includes(day) ? 'bg-primary text-white' : 'bg-gray-100 text-slate-600 hover:bg-gray-200'}`}
                 >
                   {day}
                 </button>
               ))}
             </div>
-            {errors.selectedDays && (
-              <p className="mt-1 text-sm text-rose-500">{errors.selectedDays}</p>
-            )}
+            {errors.selectedDays ? (
+              <p className="mt-1 text-sm text-rose-500">{errors.selectedDays.message}</p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Hora Inicio
-              </label>
-              <input
-                type="time"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Hora Fin
-              </label>
-              <input
-                type="time"
-                name="endTime"
-                value={formData.endTime}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
-              />
-            </div>
+            <Input label="Hora Inicio" variant="time" {...register('startTime')} />
+            <Input label="Hora Fin" variant="time" {...register('endTime')} />
           </div>
         </div>
 
-        {saveWorkerMutation.isError && (
+        {saveWorkerMutation.isError ? (
           <p className="text-sm text-rose-600">
             No se pudo guardar el trabajador. Inténtalo de nuevo.
           </p>
-        )}
+        ) : null}
       </div>
     </Modal>
   );

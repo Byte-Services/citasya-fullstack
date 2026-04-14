@@ -7,6 +7,7 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
 	label?: string
 	containerClassName?: string
 	labelClassName?: string
+	error?: string
 }
 
 export default function Input({
@@ -15,6 +16,7 @@ export default function Input({
 	className = '',
 	containerClassName = '',
 	labelClassName = '',
+	error,
 	id,
 	...props
 }: InputProps) {
@@ -40,9 +42,11 @@ export default function Input({
 			<input
 				id={id}
 				type={inputType}
-				className={`w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white ${className}`}
+				aria-invalid={Boolean(error)}
+				className={`w-full px-4 py-3 rounded-xl border outline-none transition-all bg-white ${error ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20'} ${className}`}
 				{...props}
 			/>
+			{error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null}
 		</div>
 	)
 }

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { Controller, useForm } from 'react-hook-form';
+import Input from '@/components/common/Input';
+import Dropdown from '@/components/common/Dropdown';
 import { Modal } from '@/components/ui/Modal';
 import Toast from '@/components/ui/Toast';
 import { useServiceStore } from '@/store/serviceStore';
@@ -40,8 +43,6 @@ export default function ServicesForm({
   onSuccess,
 }: ServicesFormProps) {
   const { createService, updateService } = useServiceStore();
-  const [formData, setFormData] = useState<ServiceFormValues>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{
     open: boolean;
     type: 'success' | 'error';
@@ -52,12 +53,23 @@ export default function ServicesForm({
     message: '',
   });
 
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    clearErrors,
+    formState: { errors },
+  } = useForm<ServiceFormValues>({
+    defaultValues: initialValues,
+  });
+
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialValues);
-      setErrors({});
+      reset(initialValues);
+      clearErrors();
     }
-  }, [initialValues, isOpen]);
+  }, [initialValues, isOpen, reset, clearErrors]);
 
   const serviceMutation = useMutation({
     mutationFn: async (values: ServiceFormValues) => {
@@ -86,45 +98,8 @@ export default function ServicesForm({
     },
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => {
-    const { name } = e.target;
-    let { value } = e.target;
-
-    if (name === 'price') {
-      value = sanitizeDecimalValue(value);
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const nextErrors: Record<string, string> = {};
-    if (!formData.name.trim()) nextErrors.name = 'Requerido';
-    if (!formData.category) nextErrors.category = 'Requerido';
-    if (!formData.price || Number.isNaN(Number(formData.price))) {
-      nextErrors.price = 'Precio inválido';
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
+  const onSubmit = async (formData: ServiceFormValues) => {
+    clearErrors('root');
 
     try {
       await serviceMutation.mutateAsync(formData);
@@ -153,89 +128,91 @@ export default function ServicesForm({
         isOpen={isOpen}
         onClose={onClose}
         title={editingServiceId ? 'Editar Servicio' : 'Nuevo Servicio'}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         submitLabel={serviceMutation.isPending ? 'Guardando...' : 'Guardar'}
+        noValidate
         isSubmitting={serviceMutation.isPending}
       >
         <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Nombre del Servicio <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
+          <Input
+            label="Nombre del Servicio"
+            placeholder="Ej. Limpieza facial"
+            error={errors.name?.message}
+            {...register('name', {
+              required: 'El nombre es requerido',
+              setValueAs: (value: string) => value,
+              validate: (value) => value.trim().length > 0 || 'El nombre es requerido',
+            })}
           />
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Categoría / Especialidad <span className="text-rose-500">*</span>
-          </label>
-          <select
+          <Controller
             name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 rounded-xl border ${errors.category ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
-          >
-            <option value="">Selecciona una categoría</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+            control={control}
+            rules={{ required: 'La categoría es requerida' }}
+            render={({ field }) => (
+              <Dropdown
+                name={field.name}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                options={categories}
+                placeholder="Selecciona una categoría"
+                label="Categoría / Especialidad"
+                required
+                error={Boolean(errors.category)}
+                errorMessage={errors.category?.message}
+              />
+            )}
+          />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Duración
-            </label>
-            <select
+          <div className="grid grid-cols-2 gap-4">
+            <Controller
               name="duration"
-              value={formData.duration}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
-            >
-              <option value="30 min">30 min</option>
-              <option value="45 min">45 min</option>
-              <option value="60 min">60 min</option>
-              <option value="90 min">90 min</option>
-              <option value="120 min">120 min</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Precio ($) <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
+              control={control}
+              render={({ field }) => (
+                <Dropdown
+                  name={field.name}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  options={["30 min", "45 min", "60 min", "90 min", "120 min"]}
+                  placeholder="Selecciona duración"
+                  label="Duración"
+                />
+              )}
+            />
+
+            <Input
+              label="Precio ($)"
+              variant="number"
               min="0"
               step="0.01"
-              className={`w-full px-4 py-3 rounded-xl border ${errors.price ? 'border-rose-500' : 'border-gray-200'} focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white`}
+              placeholder="0.00"
+              error={errors.price?.message}
+              {...register('price', {
+                required: 'El precio es requerido',
+                validate: (value) => {
+                  const sanitized = sanitizeDecimalValue(value);
+                  if (!sanitized || Number.isNaN(Number(sanitized))) {
+                    return 'Precio inválido';
+                  }
+                  return true;
+                },
+                onChange: (e) => {
+                  e.target.value = sanitizeDecimalValue(e.target.value);
+                },
+              })}
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Descripción
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white resize-none"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Descripción
+            </label>
+            <textarea
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white resize-none"
+              {...register('description')}
+            />
+          </div>
 
         </div>
       </Modal>

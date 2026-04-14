@@ -177,7 +177,7 @@ export default function WorkersPage() {
                 showCreateButton={true}
                 onCreateClick={openNewWorkerModal}
             >
-                <div className="w-full max-w-screen-2xl mx-auto">
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
                     
 
                     <WorkersGrid

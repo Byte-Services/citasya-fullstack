@@ -4,16 +4,17 @@
 import { useEffect
  } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store';
 
 export default function HomePage() {
   const router = useRouter();
+  const { hasHydrated, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      router.replace('/home');
-    }, 900);
-    return () => clearTimeout(timeout);
-  }, [router]);
+    if (!hasHydrated) return;
+
+    router.replace(isAuthenticated ? '/home' : '/login');
+  }, [hasHydrated, isAuthenticated, router]);
 
   // Loader con color primario del login
   return (
@@ -24,7 +25,7 @@ export default function HomePage() {
           <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           
         </svg>
-        <p className="text-primary text-base font-medium">Cargando...</p>
+        <p className="text-primary text-base font-medium">Redireccionando...</p>
       </div>
     </div>
   );

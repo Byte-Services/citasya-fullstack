@@ -1,11 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { XIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import Input from '@/components/common/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import Toast from '@/components/ui/Toast';
 import { useSpecialtyStore } from '@/store/specialtyStore';
 import { Specialty } from '@/interfaces/specialty';
+
+type SpecialtyFormValues = {
+  specialtyName: string;
+};
 
 interface SpecialtiesFormProps {
   isOpen: boolean;
@@ -20,7 +26,6 @@ export default function SpecialtiesForm({
   usedCategories,
   centerId = '1',
 }: SpecialtiesFormProps) {
-  const [newSpecialty, setNewSpecialty] = useState('');
   const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null);
   const [toast, setToast] = useState<{
     open: boolean;
@@ -39,6 +44,18 @@ export default function SpecialtiesForm({
     () => new Set(usedCategories.map((item) => item.trim().toLowerCase())),
     [usedCategories],
   );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    clearErrors,
+    formState: { errors },
+  } = useForm<SpecialtyFormValues>({
+    defaultValues: {
+      specialtyName: '',
+    },
+  });
 
   const uniqueSpecialties = useMemo(() => {
     const registry = new Map<string, Specialty>();
@@ -71,7 +88,8 @@ export default function SpecialtiesForm({
       });
     },
     onSuccess: async () => {
-      setNewSpecialty('');
+      reset({ specialtyName: '' });
+      clearErrors();
       setToast({
         open: true,
         type: 'success',
@@ -119,11 +137,8 @@ export default function SpecialtiesForm({
     },
   });
 
-  const handleAddSpecialty = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const trimmedValue = newSpecialty.trim();
-    if (!trimmedValue) return;
+  const handleAddSpecialty = async (values: SpecialtyFormValues) => {
+    const trimmedValue = values.specialtyName.trim();
 
     const exists = uniqueSpecialties.some(
       (specialty: Specialty) => specialty.name.toLowerCase() === trimmedValue.toLowerCase(),
@@ -170,17 +185,25 @@ export default function SpecialtiesForm({
         title="Gestionar Especialidades"
       >
         <div className="space-y-6">
-          <form onSubmit={handleAddSpecialty} className="flex gap-2">
-            <input
-              type="text"
-              value={newSpecialty}
-              onChange={(e) => setNewSpecialty(e.target.value)}
+          <form
+            onSubmit={handleSubmit(handleAddSpecialty)}
+            noValidate
+            className="space-y-3"
+          >
+            <Input
+              label="Nueva especialidad"
               placeholder="Nueva especialidad..."
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              error={errors.specialtyName?.message}
+              containerClassName="space-y-1"
+              {...register('specialtyName', {
+                required: 'La especialidad es requerida',
+                validate: (value) =>
+                  value.trim().length > 0 || 'La especialidad es requerida',
+              })}
             />
             <button
               type="submit"
-              disabled={!newSpecialty.trim() || createSpecialtyMutation.isPending}
+              disabled={createSpecialtyMutation.isPending}
               className="bg-primary text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
             >
               {createSpecialtyMutation.isPending ? 'Agregando...' : 'Agregar'}

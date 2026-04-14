@@ -14,6 +14,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore } from "@/store";
 
 const navItems = [
   {
@@ -56,10 +57,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { logout, isLoading } = useAuthStore();
 
   const handleNavigate = (href: string) => {
     router.push(href);
     setSidebarOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      setSidebarOpen(false);
+      router.replace("/login");
+    }
   };
 
   const sidebarContent = (
@@ -115,7 +126,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         </div>
         <button
-          onClick={() => router.push("/login")}
+          onClick={handleLogout}
+          disabled={isLoading}
           className="w-full flex items-center px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
         >
           <LogOutIcon className="w-4 h-4 mr-2" />
